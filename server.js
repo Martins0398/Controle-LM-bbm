@@ -1,0 +1,578 @@
+/**
+ * Servidor Backend Corporativo — Controle Operacional de Docas & Dashboard
+ * BBM Logística
+ * 
+ * Tecnologias nativas: Node.js 24 (node:http, node:crypto, node:sqlite)
+ * Zero dependências externas
+ */
+
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { DatabaseSync } = require('node:sqlite');
+
+const PORT = process.env.PORT || 3000;
+const DB_PATH = path.join(__dirname, 'database.sqlite');
+const PUBLIC_DIR = __dirname;
+
+// Inicializa Banco SQLite
+const db = new DatabaseSync(DB_PATH);
+
+// Criação de Tabelas
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    matricula TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'operador',
+    unidade TEXT NOT NULL DEFAULT 'CD São Paulo',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS login_attempts (
+    identifier TEXT PRIMARY KEY,
+    attempts INTEGER NOT NULL DEFAULT 1,
+    last_attempt INTEGER NOT NULL,
+    locked_until INTEGER NOT NULL DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS dock_records (
+    id TEXT PRIMARY KEY,
+    unidade TEXT NOT NULL,
+    rota TEXT,
+    motorista TEXT,
+    placa TEXT,
+    doca TEXT,
+    conferente TEXT,
+    inicio TEXT,
+    fim TEXT,
+    isca TEXT,
+    retornoIsca TEXT,
+    placaLiberada INTEGER DEFAULT 0,
+    destaqueLinha INTEGER DEFAULT 0,
+    obs TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS units (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL
+  );
+`);
+
+// Funções Criptográficas Seguras
+function hashPassword(password, salt) {
+  if (!salt) salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return { hash, salt };
+}
+
+function verifyPassword(password, hash, salt) {
+  const check = crypto.scryptSync(password, salt, 64).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(check, 'hex'), Buffer.from(hash, 'hex'));
+}
+
+// Seed Inicial de Usuários e Unidades
+function seedInitialData() {
+  const userCount = db.prepare('SELECT count(*) as count FROM users').get().count;
+  if (userCount === 0) {
+    console.log('[Seed] Criando usuários padrão...');
+    
+    // 1. Administrador BBM
+    const adminPass = hashPassword('Admin@BBM2026');
+    db.prepare(`
+      INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'usr-admin-1',
+      'Administrador BBM',
+      'admin@bbmlogistica.com.br',
+      'BBM-001',
+      adminPass.hash,
+      adminPass.salt,
+      'admin',
+      'CD São Paulo'
+    );
+
+    // 2. Operador / Conferente
+    const opPass = hashPassword('Operador@BBM2026');
+    db.prepare(`
+      INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'usr-op-1',
+      'João Silva (Conferente)',
+      'operador@bbmlogistica.com.br',
+      'BBM-002',
+      opPass.hash,
+      opPass.salt,
+      'operador',
+      'CD São Paulo'
+    );
+
+    console.log('[Seed] Usuários criados com sucesso.');
+  }
+
+  // Seed de Unidades
+  const unitCount = db.prepare('SELECT count(*) as count FROM units').get().count;
+  if (unitCount === 0) {
+    const defaultUnits = [
+      "CD São Paulo",
+      "CD Curitiba",
+      "CD Rio de Janeiro",
+      "CD Belo Horizonte",
+      "CD Porto Alegre"
+    ];
+    const stmt = db.prepare('INSERT OR IGNORE INTO units (name) VALUES (?)');
+    defaultUnits.forEach(u => stmt.run(u));
+  }
+
+  // Seed de Registros de Docas (Se vazio)
+  const recCount = db.prepare('SELECT count(*) as count FROM dock_records').get().count;
+  if (recCount === 0) {
+    const defaultRecords = [
+      { id: "rec-1", unidade: "CD São Paulo", rota: "1A", motorista: "PATRICIA DE CARVALHO SOUZA DOS ANJOS", placa: "JDP0A37", doca: "8", conferente: "JOÃO", inicio: "08:16", fim: "08:42", isca: "5583", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 0, obs: "" },
+      { id: "rec-2", unidade: "CD São Paulo", rota: "1A", motorista: "ANTONIO SOUZA NETO", placa: "APG3680", doca: "11", conferente: "LUANA", inicio: "07:00", fim: "07:45", isca: "8774", retornoIsca: "OK", placaLiberada: 0, destaqueLinha: 0, obs: "" },
+      { id: "rec-3", unidade: "CD São Paulo", rota: "1A", motorista: "JOÃO GILBERTO ALVES DA SILVA", placa: "HDH5G43", doca: "8", conferente: "JOÃO", inicio: "07:40", fim: "08:07", isca: "4557", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
+      { id: "rec-4", unidade: "CD São Paulo", rota: "2A", motorista: "MAICK DE SOUSA CAVALCANTE", placa: "QNF6G09", doca: "12", conferente: "NELSON", inicio: "07:22", fim: "07:31", isca: "785", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
+      { id: "rec-5", unidade: "CD São Paulo", rota: "2A/B", motorista: "BRUNO BORGES SADDE", placa: "LLV1330", doca: "12", conferente: "NELSON", inicio: "08:29", fim: "08:47", isca: "S/ISCA", retornoIsca: "S/ISCA", placaLiberada: 0, destaqueLinha: 0, obs: "" },
+      { id: "rec-6", unidade: "CD São Paulo", rota: "2B", motorista: "LUCIO FLAVIO OLIVEIRA PIRES", placa: "JHX5D08", doca: "8", conferente: "JOÃO", inicio: "07:15", fim: "07:24", isca: "1851", retornoIsca: "OK", placaLiberada: 1, destaqueLinha: 0, obs: "" },
+      { id: "rec-7", unidade: "CD São Paulo", rota: "3A", motorista: "WESLEY GOMES PEREIRA", placa: "QIT1A48", doca: "12", conferente: "NELSON", inicio: "10:04", fim: "10:34", isca: "400", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
+      { id: "rec-8", unidade: "CD São Paulo", rota: "3B", motorista: "NILTON OLIVEIRA COSTA", placa: "JIZ3899", doca: "11", conferente: "LUANA", inicio: "08:14", fim: "08:24", isca: "138", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
+      { id: "rec-9", unidade: "CD São Paulo", rota: "4A", motorista: "ELISON DA SILVA MONTEIRO", placa: "PPW1135", doca: "8", conferente: "JOÃO", inicio: "08:52", fim: "09:07", isca: "S/ISCA", retornoIsca: "S/ISCA", placaLiberada: 1, destaqueLinha: 0, obs: "" },
+      { id: "rec-10", unidade: "CD São Paulo", rota: "5B", motorista: "VALTER ROBERTO DE ABREU", placa: "FML5A07", doca: "11", conferente: "LUANA", inicio: "09:21", fim: "09:40", isca: "1187", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
+      { id: "rec-11", unidade: "CD São Paulo", rota: "1A", motorista: "MARCELO SILVEIRA RAMOS", placa: "ABC1D23", doca: "8", conferente: "JOÃO", inicio: "10:15", fim: "", isca: "3312", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 0, obs: "Carregamento em andamento" },
+      { id: "rec-12", unidade: "CD São Paulo", rota: "2A", motorista: "CARLOS EDUARDO SANTOS", placa: "XYZ9K88", doca: "12", conferente: "NELSON", inicio: "10:30", fim: "", isca: "7741", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 0, obs: "Aguardando conferência final" }
+    ];
+
+    const insertStmt = db.prepare(`
+      INSERT INTO dock_records (id, unidade, rota, motorista, placa, doca, conferente, inicio, fim, isca, retornoIsca, placaLiberada, destaqueLinha, obs)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    defaultRecords.forEach(r => {
+      insertStmt.run(r.id, r.unidade, r.rota, r.motorista, r.placa, r.doca, r.conferente, r.inicio, r.fim, r.isca, r.retornoIsca, r.placaLiberada, r.destaqueLinha, r.obs);
+    });
+  }
+}
+
+seedInitialData();
+
+// Helper de Leitura do Body da Requisição
+function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+      if (body.length > 2 * 1024 * 1024) { // Limite 2MB
+        reject(new Error('Payload too large'));
+      }
+    });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+// Helpers de Cookies e Autenticação
+function getSessionToken(req) {
+  const cookies = req.headers.cookie;
+  if (!cookies) return null;
+  const match = cookies.split(';').find(c => c.trim().startsWith('bbm_auth_token='));
+  if (!match) return null;
+  return match.split('=')[1].trim();
+}
+
+function getAuthenticatedUser(req) {
+  const token = getSessionToken(req);
+  if (!token) return null;
+
+  const now = Date.now();
+  const session = db.prepare(`
+    SELECT s.token, s.expires_at, u.id, u.name, u.email, u.matricula, u.role, u.unidade
+    FROM sessions s
+    JOIN users u ON s.user_id = u.id
+    WHERE s.token = ? AND s.expires_at > ?
+  `).get(token, now);
+
+  return session || null;
+}
+
+function sendJson(res, statusCode, data, headers = {}) {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...headers
+  });
+  res.end(JSON.stringify(data));
+}
+
+// MIME Types para arquivos estáticos
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+};
+
+// Servidor HTTP
+const server = http.createServer(async (req, res) => {
+  const urlObj = new URL(req.url, `http://${req.headers.host}`);
+  const pathname = urlObj.pathname;
+  const method = req.method;
+
+  // ROTA 1: Página Inicial (Redirecionamento Inteligente)
+  if (pathname === '/' || pathname === '/index.html') {
+    const user = getAuthenticatedUser(req);
+    if (!user) {
+      res.writeHead(302, { 'Location': '/login.html' });
+      return res.end();
+    }
+  }
+
+  // ROTA 2: Página de Login
+  if (pathname === '/login' || pathname === '/login.html') {
+    const user = getAuthenticatedUser(req);
+    if (user) {
+      res.writeHead(302, { 'Location': '/index.html' });
+      return res.end();
+    }
+    const loginFilePath = path.join(PUBLIC_DIR, 'login.html');
+    if (fs.existsSync(loginFilePath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return fs.createReadStream(loginFilePath).pipe(res);
+    }
+  }
+
+  // ==========================================
+  // APIS DE AUTENTICAÇÃO
+  // ==========================================
+
+  // POST /api/auth/login
+  if (pathname === '/api/auth/login' && method === 'POST') {
+    try {
+      const { identifier, password, rememberMe } = await parseBody(req);
+
+      if (!identifier || !password) {
+        return sendJson(res, 400, { success: false, message: 'Informe a matrícula/e-mail e a senha.' });
+      }
+
+      const idClean = identifier.trim().toLowerCase();
+      const now = Date.now();
+
+      // Verificação de Tentativas / Força Bruta
+      const attempt = db.prepare('SELECT * FROM login_attempts WHERE identifier = ?').get(idClean);
+      if (attempt && attempt.locked_until > now) {
+        const remainingMinutes = Math.ceil((attempt.locked_until - now) / 60000);
+        return sendJson(res, 429, {
+          success: false,
+          message: `Conta temporariamente bloqueada por segurança. Tente novamente em ${remainingMinutes} minuto(s).`
+        });
+      }
+
+      // Busca Usuário por e-mail ou matrícula
+      const user = db.prepare(`
+        SELECT * FROM users 
+        WHERE LOWER(email) = ? OR LOWER(matricula) = ?
+      `).get(idClean, idClean);
+
+      if (!user || !verifyPassword(password, user.password_hash, user.salt)) {
+        // Registra falha
+        const currentAttempts = attempt ? attempt.attempts + 1 : 1;
+        const lockUntil = currentAttempts >= 5 ? now + (10 * 60 * 1000) : 0; // Bloqueio de 10 min após 5 falhas
+        
+        db.prepare(`
+          INSERT INTO login_attempts (identifier, attempts, last_attempt, locked_until)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(identifier) DO UPDATE SET
+            attempts = excluded.attempts,
+            last_attempt = excluded.last_attempt,
+            locked_until = excluded.locked_until
+        `).run(idClean, currentAttempts, now, lockUntil);
+
+        return sendJson(res, 401, {
+          success: false,
+          message: 'Credenciais inválidas. Verifique seu e-mail/matrícula e senha.'
+        });
+      }
+
+      // Sucesso: Limpa tentativas anteriores
+      db.prepare('DELETE FROM login_attempts WHERE identifier = ?').run(idClean);
+
+      // Cria sessão (7 dias se rememberMe, senão 24h)
+      const token = crypto.randomBytes(32).toString('hex');
+      const duration = rememberMe ? (7 * 24 * 60 * 60 * 1000) : (24 * 60 * 60 * 1000);
+      const expiresAt = now + duration;
+
+      db.prepare(`
+        INSERT INTO sessions (token, user_id, expires_at)
+        VALUES (?, ?, ?)
+      `).run(token, user.id, expiresAt);
+
+      const cookieHeader = `bbm_auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${duration / 1000}`;
+
+      return sendJson(res, 200, {
+        success: true,
+        message: 'Autenticação realizada com sucesso!',
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          matricula: user.matricula,
+          role: user.role,
+          unidade: user.unidade
+        }
+      }, { 'Set-Cookie': cookieHeader });
+
+    } catch (err) {
+      console.error('Erro no login:', err);
+      return sendJson(res, 500, { success: false, message: 'Erro interno ao processar login.' });
+    }
+  }
+
+  // POST /api/auth/logout
+  if (pathname === '/api/auth/logout' && method === 'POST') {
+    const token = getSessionToken(req);
+    if (token) {
+      db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    }
+    const expiredCookie = `bbm_auth_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+    return sendJson(res, 200, { success: true, message: 'Sessão encerrada com sucesso.' }, { 'Set-Cookie': expiredCookie });
+  }
+
+  // GET /api/auth/me
+  if (pathname === '/api/auth/me' && method === 'GET') {
+    const user = getAuthenticatedUser(req);
+    if (!user) {
+      return sendJson(res, 401, { authenticated: false, message: 'Não autenticado' });
+    }
+    return sendJson(res, 200, {
+      authenticated: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        matricula: user.matricula,
+        role: user.role,
+        unidade: user.unidade
+      }
+    });
+  }
+
+  // ==========================================
+  // APIS DE REGISTROS DE DOCAS (COMPARTILHADO EM TEMPO REAL)
+  // ==========================================
+
+  // GET /api/records
+  if (pathname === '/api/records' && method === 'GET') {
+    const user = getAuthenticatedUser(req);
+    if (!user) return sendJson(res, 401, { error: 'Acesso negado' });
+
+    const rows = db.prepare('SELECT * FROM dock_records ORDER BY id ASC').all();
+    const records = rows.map(r => ({
+      ...r,
+      placaLiberada: Boolean(r.placaLiberada),
+      destaqueLinha: Boolean(r.destaqueLinha)
+    }));
+
+    return sendJson(res, 200, records);
+  }
+
+  // POST /api/records (Salvar / Criar / Atualizar Registro)
+  if (pathname === '/api/records' && method === 'POST') {
+    const user = getAuthenticatedUser(req);
+    if (!user) return sendJson(res, 401, { error: 'Acesso negado' });
+
+    try {
+      const data = await parseBody(req);
+      if (!data.id) data.id = 'rec-' + Date.now();
+
+      const stmt = db.prepare(`
+        INSERT INTO dock_records (
+          id, unidade, rota, motorista, placa, doca, conferente, inicio, fim, isca, retornoIsca, placaLiberada, destaqueLinha, obs, updated_at, updated_by
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
+        )
+        ON CONFLICT(id) DO UPDATE SET
+          unidade = excluded.unidade,
+          rota = excluded.rota,
+          motorista = excluded.motorista,
+          placa = excluded.placa,
+          doca = excluded.doca,
+          conferente = excluded.conferente,
+          inicio = excluded.inicio,
+          fim = excluded.fim,
+          isca = excluded.isca,
+          retornoIsca = excluded.retornoIsca,
+          placaLiberada = excluded.placaLiberada,
+          destaqueLinha = excluded.destaqueLinha,
+          obs = excluded.obs,
+          updated_at = CURRENT_TIMESTAMP,
+          updated_by = excluded.updated_by
+      `);
+
+      stmt.run(
+        data.id,
+        data.unidade || 'CD São Paulo',
+        data.rota || '',
+        data.motorista || '',
+        data.placa || '',
+        data.doca || '',
+        data.conferente || '',
+        data.inicio || '',
+        data.fim || '',
+        data.isca || 'S/ISCA',
+        data.retornoIsca || 'S/ISCA',
+        data.placaLiberada ? 1 : 0,
+        data.destaqueLinha ? 1 : 0,
+        data.obs || '',
+        user.name
+      );
+
+      return sendJson(res, 200, { success: true, record: data });
+    } catch (err) {
+      console.error('Erro ao salvar registro:', err);
+      return sendJson(res, 500, { error: 'Falha ao salvar no banco de dados' });
+    }
+  }
+
+  // DELETE /api/records/:id
+  if (pathname.startsWith('/api/records/') && method === 'DELETE') {
+    const user = getAuthenticatedUser(req);
+    if (!user) return sendJson(res, 401, { error: 'Acesso negado' });
+
+    const id = pathname.split('/').pop();
+    db.prepare('DELETE FROM dock_records WHERE id = ?').run(id);
+    return sendJson(res, 200, { success: true, message: 'Registro excluído' });
+  }
+
+  // GET /api/units
+  if (pathname === '/api/units' && method === 'GET') {
+    const units = db.prepare('SELECT name FROM units ORDER BY id ASC').all().map(u => u.name);
+    return sendJson(res, 200, units);
+  }
+
+  // POST /api/units
+  if (pathname === '/api/units' && method === 'POST') {
+    const user = getAuthenticatedUser(req);
+    if (!user) return sendJson(res, 401, { error: 'Acesso negado' });
+
+    try {
+      const { name } = await parseBody(req);
+      if (!name || !name.trim()) return sendJson(res, 400, { error: 'Nome de unidade inválido' });
+      db.prepare('INSERT OR IGNORE INTO units (name) VALUES (?)').run(name.trim());
+      return sendJson(res, 200, { success: true });
+    } catch (err) {
+      return sendJson(res, 500, { error: err.message });
+    }
+  }
+
+  // ==========================================
+  // APIS ADMINISTRATIVAS (GESTÃO DE USUÁRIOS)
+  // ==========================================
+
+  // GET /api/admin/users
+  if (pathname === '/api/admin/users' && method === 'GET') {
+    const user = getAuthenticatedUser(req);
+    if (!user || user.role !== 'admin') {
+      return sendJson(res, 403, { error: 'Acesso restrito a administradores' });
+    }
+    const users = db.prepare('SELECT id, name, email, matricula, role, unidade, created_at FROM users ORDER BY created_at DESC').all();
+    return sendJson(res, 200, users);
+  }
+
+  // POST /api/admin/users (Cadastrar novo usuário com senha segura)
+  if (pathname === '/api/admin/users' && method === 'POST') {
+    const user = getAuthenticatedUser(req);
+    if (!user || user.role !== 'admin') {
+      return sendJson(res, 403, { error: 'Acesso restrito a administradores' });
+    }
+
+    try {
+      const { name, email, matricula, password, role, unidade } = await parseBody(req);
+      if (!name || !email || !matricula || !password) {
+        return sendJson(res, 400, { error: 'Todos os campos obrigatórios devem ser preenchidos.' });
+      }
+
+      const { hash, salt } = hashPassword(password);
+      const newId = 'usr-' + Date.now();
+
+      db.prepare(`
+        INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        newId,
+        name.trim(),
+        email.trim().toLowerCase(),
+        matricula.trim().toUpperCase(),
+        hash,
+        salt,
+        role || 'operador',
+        unidade || 'CD São Paulo'
+      );
+
+      return sendJson(res, 201, { success: true, message: 'Usuário cadastrado com sucesso!' });
+    } catch (err) {
+      if (err.message && err.message.includes('UNIQUE constraint')) {
+        return sendJson(res, 409, { error: 'E-mail ou Matrícula já cadastrada no sistema.' });
+      }
+      return sendJson(res, 500, { error: 'Erro ao cadastrar usuário: ' + err.message });
+    }
+  }
+
+  // ==========================================
+  // SERVINDO ARQUIVOS ESTÁTICOS
+  // ==========================================
+  let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+  let filePath = path.join(PUBLIC_DIR, safePath);
+
+  // Protege diretório
+  if (!filePath.startsWith(PUBLIC_DIR)) {
+    res.writeHead(403);
+    return res.end('Acesso Negado');
+  }
+
+  fs.stat(filePath, (err, stats) => {
+    if (err || !stats.isFile()) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('Arquivo não encontrado');
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+    res.writeHead(200, { 'Content-Type': contentType });
+    fs.createReadStream(filePath).pipe(res);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`\n================================================================`);
+  console.log(`Controle Operacional de Docas & Dashboard — BBM Logística`);
+  console.log(`Servidor Ativo em: http://localhost:${PORT}`);
+  console.log(`Acesso ao Login: http://localhost:${PORT}/login.html`);
+  console.log(`================================================================\n`);
+});

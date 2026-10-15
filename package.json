@@ -1,0 +1,20 @@
+{
+  "name": "controle-docas-bbm",
+  "version": "1.0.0",
+  "description": "Controle Operacional de Docas & Dashboard — BBM Logística",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "bbm",
+    "logistica",
+    "docas",
+    "dashboard"
+  ],
+  "author": "BBM Logística",
+  "license": "ISC"
+}

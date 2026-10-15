@@ -1,0 +1,1581 @@
+/**
+ * Controle Operacional de Docas & Dashboard Analítico
+ * BBM Logística / Translovato / Lagexpress / Diálogo
+ */
+
+// Storage Keys
+const STORAGE_KEY_DATA = 'bbm_controle_docas_registros_v2';
+const STORAGE_KEY_UNITS = 'bbm_controle_docas_unidades_v2';
+const STORAGE_KEY_ACTIVE_UNIT = 'bbm_controle_docas_active_unit';
+const STORAGE_KEY_THEME = 'bbm_controle_docas_theme';
+
+// Default Units
+const DEFAULT_UNITS = [
+  "CD São Paulo",
+  "CD Curitiba",
+  "CD Rio de Janeiro",
+  "CD Belo Horizonte",
+  "CD Porto Alegre"
+];
+
+// Initial Data Seed (Exact records from user's image + additional demo units)
+const SEED_DATA = [
+  // CD São Paulo (Exact image replica)
+  {
+    id: "rec-1",
+    unidade: "CD São Paulo",
+    rota: "1A",
+    motorista: "PATRICIA DE CARVALHO SOUZA DOS ANJOS",
+    placa: "JDP0A37",
+    doca: "8",
+    conferente: "JOÃO",
+    inicio: "08:16",
+    fim: "08:42",
+    isca: "5583",
+    retornoIsca: "PENDENTE",
+    placaLiberada: false,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-2",
+    unidade: "CD São Paulo",
+    rota: "1A",
+    motorista: "ANTONIO SOUZA NETO",
+    placa: "APG3680",
+    doca: "11",
+    conferente: "LUANA",
+    inicio: "07:00",
+    fim: "07:45",
+    isca: "8774",
+    retornoIsca: "OK",
+    placaLiberada: false,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-3",
+    unidade: "CD São Paulo",
+    rota: "1A",
+    motorista: "JOÃO GILBERTO ALVES DA SILVA",
+    placa: "HDH5G43",
+    doca: "8",
+    conferente: "JOÃO",
+    inicio: "07:40",
+    fim: "08:07",
+    isca: "4557",
+    retornoIsca: "PENDENTE",
+    placaLiberada: true,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-4",
+    unidade: "CD São Paulo",
+    rota: "2A",
+    motorista: "MAICK DE SOUSA CAVALCANTE",
+    placa: "QNF6G09",
+    doca: "12",
+    conferente: "NELSON",
+    inicio: "07:22",
+    fim: "07:31",
+    isca: "785",
+    retornoIsca: "PENDENTE",
+    placaLiberada: true,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-5",
+    unidade: "CD São Paulo",
+    rota: "2A/B",
+    motorista: "BRUNO BORGES SADDE",
+    placa: "LLV1330",
+    doca: "12",
+    conferente: "NELSON",
+    inicio: "08:29",
+    fim: "08:47",
+    isca: "S/ISCA",
+    retornoIsca: "S/ISCA",
+    placaLiberada: false,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-6",
+    unidade: "CD São Paulo",
+    rota: "2B",
+    motorista: "LUCIO FLAVIO OLIVEIRA PIRES",
+    placa: "JHX5D08",
+    doca: "8",
+    conferente: "JOÃO",
+    inicio: "07:15",
+    fim: "07:24",
+    isca: "1851",
+    retornoIsca: "OK",
+    placaLiberada: true,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-7",
+    unidade: "CD São Paulo",
+    rota: "3A",
+    motorista: "WESLEY GOMES PEREIRA",
+    placa: "QIT1A48",
+    doca: "12",
+    conferente: "NELSON",
+    inicio: "10:04",
+    fim: "10:34",
+    isca: "400",
+    retornoIsca: "PENDENTE",
+    placaLiberada: true,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-8",
+    unidade: "CD São Paulo",
+    rota: "3B",
+    motorista: "NILTON OLIVEIRA COSTA",
+    placa: "JIV1456",
+    doca: "10",
+    conferente: "LUANA",
+    inicio: "08:35",
+    fim: "09:25",
+    isca: "9718",
+    retornoIsca: "PENDENTE",
+    placaLiberada: false,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-9",
+    unidade: "CD São Paulo",
+    rota: "3C",
+    motorista: "VAGNER SOUSA OLIVEIRA",
+    placa: "NLJ3A13",
+    doca: "10",
+    conferente: "CARLOS",
+    inicio: "08:53",
+    fim: "09:27",
+    isca: "9167",
+    retornoIsca: "PENDENTE",
+    placaLiberada: false,
+    destaqueLinha: true,
+    obs: ""
+  },
+  {
+    id: "rec-10",
+    unidade: "CD São Paulo",
+    rota: "3D",
+    motorista: "JOSÉ ARAUJO FREIRE",
+    placa: "JHH8E73",
+    doca: "11",
+    conferente: "JULIA",
+    inicio: "07:00",
+    fim: "07:28",
+    isca: "8742",
+    retornoIsca: "OK",
+    placaLiberada: false,
+    destaqueLinha: false,
+    obs: ""
+  },
+
+  // CD Curitiba Sample Entries
+  {
+    id: "rec-11",
+    unidade: "CD Curitiba",
+    rota: "CWB-01",
+    motorista: "MARCOS VINICIUS RIBEIRO",
+    placa: "BCW4A21",
+    doca: "3",
+    conferente: "RODRIGO",
+    inicio: "06:45",
+    fim: "07:30",
+    isca: "3312",
+    retornoIsca: "OK",
+    placaLiberada: true,
+    destaqueLinha: false,
+    obs: ""
+  },
+  {
+    id: "rec-12",
+    unidade: "CD Curitiba",
+    rota: "CWB-02",
+    motorista: "EDSON SILVA SANTOS",
+    placa: "RHD8E99",
+    doca: "4",
+    conferente: "RODRIGO",
+    inicio: "08:10",
+    fim: "",
+    isca: "7721",
+    retornoIsca: "PENDENTE",
+    placaLiberada: false,
+    destaqueLinha: false,
+    obs: "Em carregamento de paletes pesados"
+  },
+
+  // CD Rio de Janeiro Sample Entries
+  {
+    id: "rec-13",
+    unidade: "CD Rio de Janeiro",
+    rota: "RIO-NORTH",
+    motorista: "CARLOS EDUARDO MARTINS",
+    placa: "RIO2D19",
+    doca: "6",
+    conferente: "MARCELO",
+    inicio: "07:10",
+    fim: "08:05",
+    isca: "9912",
+    retornoIsca: "OK",
+    placaLiberada: true,
+    destaqueLinha: false,
+    obs: ""
+  }
+];
+
+// App State
+let state = {
+  unidades: [],
+  registros: [],
+  activeUnidade: "CD São Paulo",
+  activeTab: "docas", // 'docas' ou 'dashboard'
+  filterStatus: "todos",
+  filterDoca: "",
+  searchTerm: "",
+  editingId: null,
+  currentUser: null
+};
+
+// Chart instances
+let charts = {
+  statusCarregamento: null,
+  statusIscas: null,
+  ocupacaoDocas: null,
+  conferentes: null
+};
+
+// Initializer
+document.addEventListener('DOMContentLoaded', async () => {
+  await initAuth();
+  await loadStorage();
+  initClock();
+  initTheme();
+  setupEventListeners();
+  populateUnitSelects();
+  renderApp();
+});
+
+// Autenticação & Verificação de Sessão
+async function initAuth() {
+  const isHttp = window.location.protocol.startsWith('http');
+  
+  if (isHttp) {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          state.currentUser = data.user;
+          updateUserHeaderUI(data.user);
+          return;
+        }
+      }
+      // Não autenticado em ambiente HTTP -> Redireciona para o login
+      window.location.href = '/login.html';
+      return;
+    } catch (err) {
+      console.warn("Servidor de auth indisponível, usando fallback:", err);
+    }
+  }
+
+  // Fallback para modo offline / file:///
+  const cachedUser = localStorage.getItem('bbm_logged_user');
+  if (cachedUser) {
+    try {
+      state.currentUser = JSON.parse(cachedUser);
+      updateUserHeaderUI(state.currentUser);
+    } catch (e) {
+      setDefaultGuestUser();
+    }
+  } else {
+    setDefaultGuestUser();
+  }
+}
+
+function setDefaultGuestUser() {
+  state.currentUser = {
+    name: "Operador Local",
+    role: "operador",
+    unidade: "CD São Paulo"
+  };
+  updateUserHeaderUI(state.currentUser);
+}
+
+function updateUserHeaderUI(user) {
+  const nameEl = document.getElementById('user-display-name');
+  const roleEl = document.getElementById('user-display-role');
+  const btnAdmin = document.getElementById('btn-admin-users');
+
+  if (nameEl) nameEl.textContent = user.name || 'Usuário BBM';
+  if (roleEl) {
+    roleEl.textContent = user.role === 'admin' ? 'Administrador' : 'Operador';
+    roleEl.style.color = user.role === 'admin' ? '#38bdf8' : '#f95738';
+  }
+
+  if (btnAdmin) {
+    btnAdmin.style.display = user.role === 'admin' ? 'flex' : 'none';
+  }
+}
+
+// Storage Management (Sincronizado com API Backend)
+async function loadStorage() {
+  const isHttp = window.location.protocol.startsWith('http');
+
+  if (isHttp) {
+    try {
+      // Carrega Unidades da API
+      const resUnits = await fetch('/api/units');
+      if (resUnits.ok) {
+        const units = await resUnits.json();
+        if (units && units.length > 0) state.unidades = units;
+      }
+
+      // Carrega Registros de Docas do Banco Central
+      const resRecords = await fetch('/api/records');
+      if (resRecords.ok) {
+        const records = await resRecords.json();
+        if (records && records.length > 0) {
+          state.registros = records;
+          localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(state.registros));
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Falha ao buscar do servidor central, usando localStorage:", err);
+    }
+  }
+
+  // Fallback Local
+  try {
+    const rawUnits = localStorage.getItem(STORAGE_KEY_UNITS);
+    state.unidades = rawUnits ? JSON.parse(rawUnits) : [...DEFAULT_UNITS];
+
+    const rawData = localStorage.getItem(STORAGE_KEY_DATA);
+    state.registros = rawData ? JSON.parse(rawData) : [...SEED_DATA];
+
+    const savedUnit = localStorage.getItem(STORAGE_KEY_ACTIVE_UNIT);
+    if (savedUnit && (savedUnit === 'todas' || state.unidades.includes(savedUnit))) {
+      state.activeUnidade = savedUnit;
+    } else {
+      state.activeUnidade = "CD São Paulo";
+    }
+  } catch (err) {
+    console.warn("Erro ao ler localStorage, utilizando valores padrão:", err);
+    state.unidades = [...DEFAULT_UNITS];
+    state.registros = [...SEED_DATA];
+    state.activeUnidade = "CD São Paulo";
+  }
+  saveData();
+  saveUnits();
+}
+
+function saveData(specificRecord) {
+  localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(state.registros));
+
+  // Sincronização em background com a API Central
+  if (window.location.protocol.startsWith('http')) {
+    if (specificRecord) {
+      fetch('/api/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(specificRecord)
+      }).catch(err => console.warn("Erro ao sincronizar registro com servidor:", err));
+    }
+  }
+}
+
+function saveUnits() {
+  localStorage.setItem(STORAGE_KEY_UNITS, JSON.stringify(state.unidades));
+}
+
+// Clock (Live Date and Digital Time)
+function initClock() {
+  const timeEl = document.getElementById('live-time');
+  const dateEl = document.getElementById('live-date');
+
+  function update() {
+    const now = new Date();
+    timeEl.textContent = now.toLocaleTimeString('pt-BR');
+    
+    // Formato executivo compacto: "15/10/2026 • QUI"
+    const dia = String(now.getDate()).padStart(2, '0');
+    const mes = String(now.getMonth() + 1).padStart(2, '0');
+    const ano = now.getFullYear();
+    const diaSemana = now.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').toUpperCase();
+    dateEl.textContent = `${dia}/${mes}/${ano} • ${diaSemana}`;
+  }
+
+  update();
+  setInterval(update, 1000);
+}
+
+// Theme
+function initTheme() {
+  const savedTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'light';
+  document.body.className = `theme-${savedTheme}`;
+  updateThemeIcon(savedTheme);
+}
+
+function toggleTheme() {
+  const current = document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.body.className = `theme-${next}`;
+  localStorage.setItem(STORAGE_KEY_THEME, next);
+  updateThemeIcon(next);
+  if (state.activeTab === 'dashboard') {
+    renderDashboardCharts();
+  }
+}
+
+function updateThemeIcon(theme) {
+  const btn = document.getElementById('btn-toggle-theme');
+  btn.innerHTML = theme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+}
+
+// Tab Switching
+window.alternarAba = function(tabName) {
+  state.activeTab = tabName;
+
+  const btnDocas = document.getElementById('tab-btn-docas');
+  const btnDash = document.getElementById('tab-btn-dashboard');
+  const viewDocas = document.getElementById('view-docas');
+  const viewDash = document.getElementById('view-dashboard');
+
+  if (tabName === 'docas') {
+    btnDocas.classList.add('active');
+    btnDash.classList.remove('active');
+    viewDocas.style.display = 'block';
+    viewDash.style.display = 'none';
+    renderTable();
+  } else {
+    btnDocas.classList.remove('active');
+    btnDash.classList.add('active');
+    viewDocas.style.display = 'none';
+    viewDash.style.display = 'block';
+    renderDashboardCharts();
+  }
+};
+
+// Populate Unit Selectors
+function populateUnitSelects() {
+  const mainSelect = document.getElementById('select-unidade');
+  const formSelect = document.getElementById('form-unidade');
+
+  // Main Selector
+  mainSelect.innerHTML = `<option value="todas">🌐 Visão Geral (Todas as Unidades)</option>`;
+  state.unidades.forEach(unit => {
+    const opt = document.createElement('option');
+    opt.value = unit;
+    opt.textContent = `📍 ${unit}`;
+    if (unit === state.activeUnidade) opt.selected = true;
+    mainSelect.appendChild(opt);
+  });
+  if (state.activeUnidade === 'todas') mainSelect.value = 'todas';
+
+  // Form Selector
+  formSelect.innerHTML = '';
+  state.unidades.forEach(unit => {
+    const opt = document.createElement('option');
+    opt.value = unit;
+    opt.textContent = unit;
+    if (unit === state.activeUnidade) opt.selected = true;
+    formSelect.appendChild(opt);
+  });
+
+  updateUnitIndicatorText();
+}
+
+function updateUnitIndicatorText() {
+  const ind = document.getElementById('top-indicator-unit');
+  const dashTitle = document.getElementById('dash-active-unit-title');
+  const text = state.activeUnidade === 'todas' ? 'Visão Geral (Todas as Unidades)' : state.activeUnidade;
+  if (ind) ind.textContent = text;
+  if (dashTitle) dashTitle.textContent = text;
+}
+
+// Render Main App
+function renderApp() {
+  updateUnitIndicatorText();
+  renderKPIs();
+  renderDocaFilterOptions();
+  if (state.activeTab === 'docas') {
+    renderTable();
+  } else {
+    renderDashboardCharts();
+  }
+}
+
+// KPI Calculations
+function renderKPIs() {
+  const scopedData = getScopedData();
+
+  const total = scopedData.length;
+  const emAndamento = scopedData.filter(r => !r.fim || r.fim.trim() === '').length;
+  const concluidos = scopedData.filter(r => r.fim && r.fim.trim() !== '').length;
+  const iscasPendentes = scopedData.filter(r => {
+    const iscaCode = (r.isca || '').trim().toUpperCase();
+    return iscaCode !== '' && iscaCode !== 'S/ISCA' && r.retornoIsca !== 'OK';
+  }).length;
+
+  let totalMinutos = 0;
+  let qtdFinalizadosComTempo = 0;
+  scopedData.forEach(r => {
+    if (r.inicio && r.fim) {
+      const min = calcDurationMinutes(r.inicio, r.fim);
+      if (min >= 0) {
+        totalMinutos += min;
+        qtdFinalizadosComTempo++;
+      }
+    }
+  });
+
+  const mediaMin = qtdFinalizadosComTempo > 0 ? Math.round(totalMinutos / qtdFinalizadosComTempo) : 0;
+
+  // UI updates
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-active-unit-name').textContent = state.activeUnidade === 'todas' ? 'Todas as Unidades' : state.activeUnidade;
+  document.getElementById('kpi-loading').textContent = emAndamento;
+  document.getElementById('kpi-completed').textContent = concluidos;
+  document.getElementById('kpi-iscas-pendentes').textContent = iscasPendentes;
+  document.getElementById('kpi-tempo-medio').textContent = `${mediaMin} min`;
+
+  // Pills counts
+  document.getElementById('count-pill-todos').textContent = total;
+  document.getElementById('count-pill-andamento').textContent = emAndamento;
+  document.getElementById('count-pill-concluido').textContent = concluidos;
+  document.getElementById('count-pill-isca').textContent = iscasPendentes;
+
+  const alertBadge = document.getElementById('kpi-iscas-alert');
+  if (iscasPendentes > 0) {
+    alertBadge.style.display = 'inline-block';
+    alertBadge.textContent = `${iscasPendentes} pendente(s)`;
+  } else {
+    alertBadge.style.display = 'none';
+  }
+}
+
+// Get scoped data by unit
+function getScopedData() {
+  if (state.activeUnidade === 'todas') {
+    return state.registros;
+  }
+  return state.registros.filter(r => r.unidade === state.activeUnidade);
+}
+
+// Render Doca filter dropdown options
+function renderDocaFilterOptions() {
+  const docaSelect = document.getElementById('filter-doca');
+  const currentVal = docaSelect.value;
+  const scopedData = getScopedData();
+
+  const docas = new Set();
+  scopedData.forEach(r => {
+    if (r.doca && r.doca.trim() !== '') {
+      docas.add(r.doca.trim());
+    }
+  });
+
+  const sortedDocas = Array.from(docas).sort((a, b) => {
+    const numA = parseFloat(a.replace(',', '.'));
+    const numB = parseFloat(b.replace(',', '.'));
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
+
+  docaSelect.innerHTML = '<option value="">Todas as Docas</option>';
+  sortedDocas.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = `Doca ${d}`;
+    if (d === currentVal) opt.selected = true;
+    docaSelect.appendChild(opt);
+  });
+}
+
+// Render Table
+function renderTable() {
+  const tbody = document.getElementById('tbody-registros');
+  const emptyState = document.getElementById('table-empty-state');
+  const tableTitle = document.getElementById('table-active-title');
+  const visibleCountEl = document.getElementById('footer-count-visible');
+  const totalCountEl = document.getElementById('footer-count-total');
+
+  const unitName = state.activeUnidade === 'todas' ? 'Visão Geral (Todas as Unidades)' : state.activeUnidade;
+  tableTitle.textContent = `Grade Operacional — ${unitName}`;
+
+  let items = getScopedData();
+  totalCountEl.textContent = items.length;
+
+  // Filter by Status Pill
+  if (state.filterStatus === 'andamento') {
+    items = items.filter(r => !r.fim || r.fim.trim() === '');
+  } else if (state.filterStatus === 'concluido') {
+    items = items.filter(r => r.fim && r.fim.trim() !== '');
+  } else if (state.filterStatus === 'pendente_isca') {
+    items = items.filter(r => {
+      const iscaCode = (r.isca || '').trim().toUpperCase();
+      return iscaCode !== '' && iscaCode !== 'S/ISCA' && r.retornoIsca !== 'OK';
+    });
+  }
+
+  // Filter by Doca
+  if (state.filterDoca) {
+    items = items.filter(r => (r.doca || '').trim() === state.filterDoca);
+  }
+
+  // Filter by Search Query
+  if (state.searchTerm) {
+    const q = state.searchTerm.toLowerCase();
+    items = items.filter(r => {
+      return (r.motorista || '').toLowerCase().includes(q) ||
+             (r.placa || '').toLowerCase().includes(q) ||
+             (r.rota || '').toLowerCase().includes(q) ||
+             (r.doca || '').toLowerCase().includes(q) ||
+             (r.conferente || '').toLowerCase().includes(q) ||
+             (r.isca || '').toLowerCase().includes(q) ||
+             (r.unidade || '').toLowerCase().includes(q);
+    });
+  }
+
+  visibleCountEl.textContent = items.length;
+
+  if (items.length === 0) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  tbody.innerHTML = items.map(record => createTableRowHtml(record)).join('');
+}
+
+// Helper: Create HTML for a row
+function createTableRowHtml(record) {
+  const initials = getInitials(record.motorista);
+
+  const isPlateHighlighted = record.placaLiberada;
+  const placaHtml = isPlateHighlighted 
+    ? `<span class="placa-highlight">${escapeHtml(record.placa)}</span>`
+    : escapeHtml(record.placa);
+
+  const hasFim = record.fim && record.fim.trim() !== '';
+  let fimHtml = '';
+  let durationBadge = '';
+
+  if (hasFim) {
+    fimHtml = escapeHtml(record.fim);
+    const durationMin = calcDurationMinutes(record.inicio, record.fim);
+    let speedClass = 'duration-normal';
+    if (durationMin <= 30) speedClass = 'duration-fast';
+    else if (durationMin > 60) speedClass = 'duration-slow';
+    durationBadge = `<span class="duration-badge ${speedClass}"><i class="fa-regular fa-clock"></i> ${durationMin} min</span>`;
+  } else {
+    fimHtml = `<button class="btn-quick-end" onclick="finalizarOperacao('${record.id}')" title="Clique para encerrar com a hora atual"><i class="fa-solid fa-check"></i> Finalizar</button>`;
+    durationBadge = `<span class="duration-badge duration-ongoing"><i class="fa-solid fa-spinner fa-spin"></i> Em doca</span>`;
+  }
+
+  const iscaRaw = (record.isca || '').trim().toUpperCase();
+  const isSemIsca = iscaRaw === '' || iscaRaw === 'S/ISCA';
+  const iscaHtml = isSemIsca ? `<span class="isca-none">S/ISCA</span>` : escapeHtml(record.isca);
+
+  let retornoBtnHtml = '';
+  if (isSemIsca) {
+    retornoBtnHtml = `<span class="retorno-btn-toggle status-sem-isca" title="Não aplicável">-</span>`;
+  } else {
+    const isOk = record.retornoIsca === 'OK';
+    if (isOk) {
+      retornoBtnHtml = `<button class="retorno-btn-toggle status-ok" onclick="toggleRetornoIsca('${record.id}')" title="Isca devolvida. Clique para marcar como Pendente"><i class="fa-solid fa-check"></i> OK</button>`;
+    } else {
+      retornoBtnHtml = `<button class="retorno-btn-toggle status-pendente" onclick="toggleRetornoIsca('${record.id}')" title="Pendente de retorno! Clique para marcar como OK"><i class="fa-solid fa-triangle-exclamation"></i> PENDENTE</button>`;
+    }
+  }
+
+  const unitBadge = state.activeUnidade === 'todas' ? `<span style="font-size:0.7rem; color:var(--text-muted); display:block;">(${record.unidade})</span>` : '';
+  const rowClass = record.destaqueLinha ? 'row-destacada' : '';
+
+  return `
+    <tr id="row-${record.id}" class="${rowClass}">
+      <td class="td-rota">
+        ${escapeHtml(record.rota)}
+        ${unitBadge}
+      </td>
+      <td class="td-motorista">
+        <div class="motorista-cell-inner">
+          <span class="driver-initials">${initials}</span>
+          <span>${escapeHtml(record.motorista)}</span>
+        </div>
+      </td>
+      <td class="td-placa">${placaHtml}</td>
+      <td class="td-doca">${escapeHtml(record.doca)}</td>
+      <td class="td-conferente">${escapeHtml(record.conferente)}</td>
+      <td class="td-inicio">${escapeHtml(record.inicio)}</td>
+      <td class="td-fim">${fimHtml}</td>
+      <td class="td-tempo">${durationBadge}</td>
+      <td class="td-isca">${iscaHtml}</td>
+      <td class="td-retorno">${retornoBtnHtml}</td>
+      <td class="td-acoes">
+        <div class="action-btns-wrap">
+          <button class="btn-table-action" onclick="editarRegistro('${record.id}')" title="Editar Operação">
+            <i class="fa-regular fa-pen-to-square"></i>
+          </button>
+          <button class="btn-table-action btn-del" onclick="removerRegistro('${record.id}')" title="Excluir Registro">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+// Helpers
+function getInitials(name) {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function calcDurationMinutes(startStr, endStr) {
+  if (!startStr || !endStr) return 0;
+  const [h1, m1] = startStr.replace(' ', ':').split(':').map(Number);
+  const [h2, m2] = endStr.replace(' ', ':').split(':').map(Number);
+  if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return 0;
+
+  let startMin = h1 * 60 + m1;
+  let endMin = h2 * 60 + m2;
+  if (endMin < startMin) endMin += 24 * 60;
+  return endMin - startMin;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// 1-Click Toggle for Isca Return
+window.toggleRetornoIsca = function(id) {
+  const rec = state.registros.find(r => r.id === id);
+  if (!rec) return;
+
+  const current = rec.retornoIsca;
+  rec.retornoIsca = current === 'OK' ? 'PENDENTE' : 'OK';
+
+  saveData();
+  renderApp();
+};
+
+// Quick Finish Load
+window.finalizarOperacao = function(id) {
+  const rec = state.registros.find(r => r.id === id);
+  if (!rec) return;
+
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  rec.fim = `${hh}:${mm}`;
+
+  saveData();
+  renderApp();
+};
+
+// Delete Record
+window.removerRegistro = function(id) {
+  const rec = state.registros.find(r => r.id === id);
+  if (!rec) return;
+
+  if (confirm(`Deseja realmente remover o registro da Rota ${rec.rota} (Motorista: ${rec.motorista})?`)) {
+    state.registros = state.registros.filter(r => r.id !== id);
+    saveData();
+    renderApp();
+  }
+};
+
+// Open Modal for New Record
+window.abrirModalRegistro = function() {
+  state.editingId = null;
+  document.getElementById('modal-title-text').textContent = 'Novo Carregamento';
+  document.getElementById('form-registro').reset();
+  document.getElementById('form-id').value = '';
+
+  const unitSelect = document.getElementById('form-unidade');
+  if (state.activeUnidade !== 'todas') {
+    unitSelect.value = state.activeUnidade;
+  }
+
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('form-inicio').value = `${hh}:${mm}`;
+
+  document.getElementById('modal-registro').style.display = 'flex';
+  document.getElementById('form-rota').focus();
+};
+
+// Edit Record
+window.editarRegistro = function(id) {
+  const rec = state.registros.find(r => r.id === id);
+  if (!rec) return;
+
+  state.editingId = id;
+  document.getElementById('modal-title-text').textContent = 'Editar Operação';
+  document.getElementById('form-id').value = rec.id;
+  document.getElementById('form-unidade').value = rec.unidade;
+  document.getElementById('form-rota').value = rec.rota || '';
+  document.getElementById('form-placa').value = rec.placa || '';
+  document.getElementById('form-doca').value = rec.doca || '';
+  document.getElementById('form-motorista').value = rec.motorista || '';
+  document.getElementById('form-conferente').value = rec.conferente || '';
+  document.getElementById('form-inicio').value = rec.inicio || '';
+  document.getElementById('form-fim').value = rec.fim || '';
+  document.getElementById('form-isca').value = rec.isca || '';
+  document.getElementById('form-retorno-isca').value = rec.retornoIsca || 'PENDENTE';
+  document.getElementById('form-placa-liberada').checked = !!rec.placaLiberada;
+  document.getElementById('form-obs').value = rec.obs || '';
+
+  document.getElementById('modal-registro').style.display = 'flex';
+};
+
+function fecharModalRegistro() {
+  document.getElementById('modal-registro').style.display = 'none';
+  state.editingId = null;
+}
+
+function salvarFormRegistro(e) {
+  e.preventDefault();
+
+  const id = state.editingId || 'rec-' + Date.now();
+  const unidade = document.getElementById('form-unidade').value;
+  const rota = document.getElementById('form-rota').value.trim().toUpperCase();
+  const placa = document.getElementById('form-placa').value.trim().toUpperCase();
+  const doca = document.getElementById('form-doca').value.trim();
+  const motorista = document.getElementById('form-motorista').value.trim().toUpperCase();
+  const conferente = document.getElementById('form-conferente').value.trim().toUpperCase();
+  const inicio = document.getElementById('form-inicio').value;
+  const fim = document.getElementById('form-fim').value;
+  let isca = document.getElementById('form-isca').value.trim();
+  let retornoIsca = document.getElementById('form-retorno-isca').value;
+  const placaLiberada = document.getElementById('form-placa-liberada').checked;
+  const obs = document.getElementById('form-obs').value.trim();
+
+  if (!isca) {
+    isca = 'S/ISCA';
+    retornoIsca = 'S/ISCA';
+  }
+
+  const newRecord = {
+    id,
+    unidade,
+    rota,
+    placa,
+    doca,
+    motorista,
+    conferente,
+    inicio,
+    fim,
+    isca,
+    retornoIsca,
+    placaLiberada,
+    destaqueLinha: false,
+    obs
+  };
+
+  if (state.editingId) {
+    const idx = state.registros.findIndex(r => r.id === state.editingId);
+    if (idx !== -1) {
+      newRecord.destaqueLinha = state.registros[idx].destaqueLinha;
+      state.registros[idx] = newRecord;
+    }
+  } else {
+    state.registros.unshift(newRecord);
+  }
+
+  saveData();
+  fecharModalRegistro();
+  renderApp();
+}
+
+// Manage Units
+function abrirModalUnidades() {
+  renderListaUnidades();
+  document.getElementById('modal-unidades').style.display = 'flex';
+}
+
+function fecharModalUnidades() {
+  document.getElementById('modal-unidades').style.display = 'none';
+}
+
+function renderListaUnidades() {
+  const ul = document.getElementById('lista-unidades-cadastradas');
+  ul.innerHTML = state.unidades.map(u => `
+    <li class="unit-manage-item">
+      <span><i class="fa-solid fa-location-dot" style="color:#2563eb; margin-right:8px;"></i>${escapeHtml(u)}</span>
+      ${state.unidades.length > 1 ? `<button class="btn-del-unit" onclick="excluirUnidade('${escapeHtml(u)}')"><i class="fa-regular fa-trash-can"></i></button>` : ''}
+    </li>
+  `).join('');
+}
+
+window.excluirUnidade = function(unitName) {
+  if (confirm(`Remover a unidade "${unitName}"? Os registros atribuídos a ela serão mantidos.`)) {
+    state.unidades = state.unidades.filter(u => u !== unitName);
+    if (state.activeUnidade === unitName) {
+      state.activeUnidade = state.unidades[0] || 'todas';
+    }
+    saveUnits();
+    populateUnitSelects();
+    renderListaUnidades();
+    renderApp();
+  }
+};
+
+function adicionarNovaUnidade(e) {
+  e.preventDefault();
+  const input = document.getElementById('input-nova-unidade');
+  const nome = input.value.trim();
+  if (!nome) return;
+
+  if (state.unidades.includes(nome)) {
+    alert("Esta unidade já está cadastrada!");
+    return;
+  }
+
+  state.unidades.push(nome);
+  input.value = '';
+  saveUnits();
+  populateUnitSelects();
+  renderListaUnidades();
+}
+
+// ============================================================
+// DASHBOARD ANALYTICS & CHARTS (TAB 2 - C-LEVEL EXECUTIVE)
+// ============================================================
+function renderDashboardCharts() {
+  const scopedData = getScopedData();
+  const total = scopedData.length;
+  const concluidos = scopedData.filter(r => r.fim && r.fim.trim() !== '').length;
+  const emAndamento = total - concluidos;
+
+  // Iscas metrics
+  const comIsca = scopedData.filter(r => (r.isca || '').toUpperCase() !== 'S/ISCA' && (r.isca || '').trim() !== '');
+  const iscasOk = comIsca.filter(r => r.retornoIsca === 'OK').length;
+  const iscasPendentes = comIsca.length - iscasOk;
+  const taxaIsca = comIsca.length > 0 ? Math.round((iscasOk / comIsca.length) * 100) : 100;
+
+  // Eficiência de Doca (operações finalizadas em até 45 min)
+  let noPrazo = 0;
+  scopedData.forEach(r => {
+    if (r.inicio && r.fim) {
+      const d = calcDurationMinutes(r.inicio, r.fim);
+      if (d <= 45) noPrazo++;
+    }
+  });
+  const taxaEficiencia = concluidos > 0 ? Math.round((noPrazo / concluidos) * 100) : 100;
+  const pctConcluidos = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+
+  // KPIs Header
+  const elEfic = document.getElementById('dash-stat-eficiencia');
+  const elTaxa = document.getElementById('dash-stat-taxa-isca');
+  if (elEfic) elEfic.textContent = `${taxaEficiencia}%`;
+  if (elTaxa) elTaxa.textContent = `${taxaIsca}%`;
+
+  // Docas counts
+  const docaCounts = {};
+  scopedData.forEach(r => {
+    const d = (r.doca || 'S/D').trim();
+    docaCounts[d] = (docaCounts[d] || 0) + 1;
+  });
+  const docaLabels = Object.keys(docaCounts).sort((a,b) => Number(a) - Number(b));
+  let topDoca = '-';
+  let topDocaCount = 0;
+  docaLabels.forEach(d => {
+    if (docaCounts[d] > topDocaCount) {
+      topDocaCount = docaCounts[d];
+      topDoca = d;
+    }
+  });
+  const topDocaPct = total > 0 ? Math.round((topDocaCount / total) * 100) : 0;
+
+  // Conferentes counts
+  const confCounts = {};
+  scopedData.forEach(r => {
+    const c = (r.conferente || 'Outro').trim().toUpperCase();
+    confCounts[c] = (confCounts[c] || 0) + 1;
+  });
+  const confLabels = Object.keys(confCounts).sort((a,b) => confCounts[b] - confCounts[a]);
+  const topConf = confLabels[0] || 'N/A';
+  const topConfCount = confCounts[topConf] || 0;
+
+  // 1. Executive Summary Narrative (Manchete Executiva)
+  const unitLabel = state.activeUnidade === 'todas' ? 'Todas as Unidades' : state.activeUnidade;
+  const narrativeEl = document.getElementById('exec-narrative-text');
+  if (narrativeEl) {
+    if (total === 0) {
+      narrativeEl.innerHTML = `Nenhuma movimentação registrada até o momento para a unidade <strong>${escapeHtml(unitLabel)}</strong>.`;
+    } else {
+      narrativeEl.innerHTML = `
+        A operação de <strong>${escapeHtml(unitLabel)}</strong> registra <strong>${pctConcluidos}% das cargas concluídas</strong> (${concluidos} de ${total} viagens expedidas).
+        O índice de pontualidade em doca atinge <strong>${taxaEficiencia}%</strong> dentro do SLA meta (≤ 45 min). 
+        ${iscasPendentes > 0 
+          ? `O ponto prioritário de atenção executiva é o risco em <span class="highlight-alert">${iscasPendentes} isca(s) aguardando devolução</span> (${taxaIsca}% recolhidas), com maior concentração de fluxo na <strong>Doca ${escapeHtml(topDoca)}</strong> (${topDocaCount} veículos).`
+          : `Excelente desempenho de segurança: <strong>100% das iscas foram recolhidas</strong> e não há pendências de rastreadores em aberto.`
+        }
+      `;
+    }
+  }
+
+  // 2. Actionable Declarative Headings for Charts
+  // Chart 1 Headings
+  const titleStatus = document.getElementById('title-chart-status');
+  const subStatus = document.getElementById('subtitle-chart-status');
+  const donutValStatus = document.getElementById('donut-val-status');
+  if (titleStatus) titleStatus.innerHTML = `<i class="fa-solid fa-circle-notch"></i> ${pctConcluidos}% dos Carregamentos Concluídos`;
+  if (subStatus) subStatus.textContent = `${concluidos} expedidos | ${emAndamento} veículo(s) ainda em operação`;
+  if (donutValStatus) donutValStatus.textContent = `${pctConcluidos}%`;
+
+  // Chart 2 Headings (Iscas)
+  const titleIscas = document.getElementById('title-chart-iscas');
+  const subIscas = document.getElementById('subtitle-chart-iscas');
+  const donutValIscas = document.getElementById('donut-val-iscas');
+  if (titleIscas) {
+    if (iscasPendentes > 0) {
+      titleIscas.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-danger"></i> ${iscasPendentes} Iscas Aguardam Retorno Operacional`;
+    } else {
+      titleIscas.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Rastreamento 100% Conforme`;
+    }
+  }
+  if (subIscas) subIscas.textContent = `${taxaIsca}% de devoluções validadas (${iscasOk} ok, ${iscasPendentes} pendentes)`;
+  if (donutValIscas) {
+    donutValIscas.textContent = iscasPendentes;
+    donutValIscas.className = iscasPendentes > 0 ? 'donut-center-val text-danger' : 'donut-center-val';
+  }
+
+  // Chart 3 Headings (Docas)
+  const titleDocas = document.getElementById('title-chart-docas');
+  const subDocas = document.getElementById('subtitle-chart-docas');
+  if (titleDocas) titleDocas.innerHTML = `<i class="fa-solid fa-warehouse"></i> Doca ${escapeHtml(topDoca)} Lidera Demanda (${topDocaPct}% do Volume)`;
+  if (subDocas) subDocas.textContent = `Destaque em laranja representa o ponto de maior concentração de veículos`;
+
+  // Chart 4 Headings (Conferentes)
+  const titleConf = document.getElementById('title-chart-conferentes');
+  const subConf = document.getElementById('subtitle-chart-conferentes');
+  if (titleConf) titleConf.innerHTML = `<i class="fa-solid fa-users-gear"></i> ${escapeHtml(topConf)} Realizou Maior Volume de Conferências`;
+  if (subConf) subConf.textContent = `${topConfCount} atendimentos efetuados | Distribuição entre ${confLabels.length} operadores`;
+
+  // Render Mini-Table for Pending Iscas
+  const tbodyPend = document.getElementById('tbody-dash-pendentes');
+  const badgePend = document.getElementById('dash-badge-pendentes');
+  const pendingRecords = scopedData.filter(r => {
+    const code = (r.isca || '').trim().toUpperCase();
+    return code !== '' && code !== 'S/ISCA' && r.retornoIsca !== 'OK';
+  });
+
+  if (badgePend) {
+    badgePend.textContent = `${pendingRecords.length} pendente(s)`;
+    badgePend.className = pendingRecords.length > 0 ? 'chart-badge badge-danger' : 'chart-badge badge-success';
+  }
+
+  if (tbodyPend) {
+    if (pendingRecords.length === 0) {
+      tbodyPend.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1.5rem; color:#10b981; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Todas as iscas desta unidade foram retornadas com sucesso!</td></tr>`;
+    } else {
+      tbodyPend.innerHTML = pendingRecords.map(r => `
+        <tr>
+          <td><strong>${escapeHtml(r.rota)}</strong></td>
+          <td>${escapeHtml(r.motorista)}</td>
+          <td><span style="font-family:monospace; font-weight:bold;">${escapeHtml(r.placa)}</span></td>
+          <td><span style="color:#dc2626; font-weight:bold;">Doca ${escapeHtml(r.doca)}</span></td>
+          <td><span style="color:#dc2626; font-weight:bold;">#${escapeHtml(r.isca)}</span></td>
+          <td>
+            <button class="retorno-btn-toggle status-ok" style="padding:3px 9px; font-size:0.75rem;" onclick="toggleRetornoIsca('${r.id}')" title="Confirmar devolução da isca">
+              <i class="fa-solid fa-check"></i> Baixar
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  if (typeof Chart === 'undefined') return;
+
+  const isDark = document.body.classList.contains('theme-dark');
+  const textColor = isDark ? '#94a3b8' : '#334155';
+
+  // Plugin para desenhar números diretamente sobre/ao lado das barras
+  const dataLabelsPlugin = {
+    id: 'dataLabelsPlugin',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const isHorizontal = chart.options.indexAxis === 'y';
+      const isDark = document.body.classList.contains('theme-dark');
+      
+      chart.data.datasets.forEach((dataset, i) => {
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((bar, index) => {
+          const val = dataset.data[index];
+          if (val === undefined || val === null) return;
+          
+          ctx.save();
+          ctx.font = 'bold 13px Outfit, Inter, sans-serif';
+          
+          if (isHorizontal) {
+            ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${val} unid.`, bar.x + 8, bar.y);
+          } else {
+            // Em cima da barra vertical
+            ctx.fillStyle = (bar.options.backgroundColor === '#f97316') ? '#ea580c' : (isDark ? '#e2e8f0' : '#1e293b');
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(`${val}`, bar.x, bar.y - 4);
+          }
+          ctx.restore();
+        });
+      });
+    }
+  };
+
+  // 1. Chart Status Donut (Limpo, com contagem na legenda e centro)
+  const ctxStatus = document.getElementById('chart-status-carregamento');
+  if (ctxStatus) {
+    if (charts.statusCarregamento) charts.statusCarregamento.destroy();
+    charts.statusCarregamento = new Chart(ctxStatus, {
+      type: 'doughnut',
+      data: {
+        labels: [`Concluídos (${concluidos})`, `Em Doca (${emAndamento})`],
+        datasets: [{
+          data: [concluidos, emAndamento],
+          backgroundColor: ['#10b981', '#f59e0b'],
+          borderColor: isDark ? '#0f1a2e' : '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: textColor, font: { weight: 700, size: 12 } } },
+          tooltip: {
+            callbacks: {
+              label: (item) => ` ${item.label}: ${item.raw} (${total > 0 ? Math.round((item.raw / total)*100) : 0}%)`
+            }
+          }
+        },
+        cutout: '72%'
+      }
+    });
+  }
+
+  // 2. Chart Iscas Donut (Contagem visível na legenda e centro)
+  const ctxIscas = document.getElementById('chart-status-iscas');
+  if (ctxIscas) {
+    const semIsca = total - comIsca.length;
+    if (charts.statusIscas) charts.statusIscas.destroy();
+    charts.statusIscas = new Chart(ctxIscas, {
+      type: 'doughnut',
+      data: {
+        labels: [`Retornadas OK (${iscasOk})`, `Pendentes (${iscasPendentes})`, `Sem Isca (${semIsca})`],
+        datasets: [{
+          data: [iscasOk, iscasPendentes, semIsca],
+          backgroundColor: ['#10b981', '#ef4444', '#cbd5e1'],
+          borderColor: isDark ? '#0f1a2e' : '#ffffff',
+          borderWidth: 3,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: textColor, font: { weight: 700, size: 12 } } }
+        },
+        cutout: '72%'
+      }
+    });
+  }
+
+  // 3. Chart Ocupação por Doca (Barra com NÚMEROS no topo)
+  const ctxDocas = document.getElementById('chart-ocupacao-docas');
+  if (ctxDocas) {
+    const docaDataVals = docaLabels.map(l => docaCounts[l]);
+    const barColors = docaLabels.map(l => (l === topDoca ? '#f97316' : (isDark ? '#334155' : '#94a3b8')));
+
+    if (charts.ocupacaoDocas) charts.ocupacaoDocas.destroy();
+    charts.ocupacaoDocas = new Chart(ctxDocas, {
+      type: 'bar',
+      data: {
+        labels: docaLabels.map(l => `Doca ${l}`),
+        datasets: [{
+          label: 'Veículos Atendidos',
+          data: docaDataVals,
+          backgroundColor: barColors,
+          borderRadius: 6,
+          maxBarThickness: 46
+        }]
+      },
+      plugins: [dataLabelsPlugin],
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { top: 22 }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              afterLabel: (item) => item.label.includes(topDoca) ? ' (Gargalo de maior fluxo)' : ''
+            }
+          }
+        },
+        scales: {
+          x: { 
+            ticks: { color: textColor, font: { weight: 700, size: 12 } }, 
+            grid: { display: false }, 
+            border: { display: false } 
+          },
+          y: { 
+            grace: '15%',
+            ticks: { color: textColor, stepSize: 1 }, 
+            grid: { display: false }, 
+            border: { display: false }, 
+            beginAtZero: true 
+          }
+        }
+      }
+    });
+  }
+
+  // 4. Chart Conferentes (Horizontal Bar com NÚMEROS ao lado da barra)
+  const ctxConf = document.getElementById('chart-conferentes');
+  if (ctxConf) {
+    const confVals = confLabels.map(c => confCounts[c]);
+    const confBarColors = confLabels.map((c, i) => i === 0 ? '#1e4a9e' : (isDark ? '#334155' : '#94a3b8'));
+
+    if (charts.conferentes) charts.conferentes.destroy();
+    charts.conferentes = new Chart(ctxConf, {
+      type: 'bar',
+      data: {
+        labels: confLabels,
+        datasets: [{
+          label: 'Conferências',
+          data: confVals,
+          backgroundColor: confBarColors,
+          borderRadius: 6,
+          maxBarThickness: 24
+        }]
+      },
+      plugins: [dataLabelsPlugin],
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: {
+          padding: { right: 55 }
+        },
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { 
+            grace: '20%',
+            ticks: { color: textColor, stepSize: 1 }, 
+            grid: { display: false }, 
+            border: { display: false }, 
+            beginAtZero: true 
+          },
+          y: { 
+            ticks: { color: textColor, font: { weight: 700, size: 12 } }, 
+            grid: { display: false }, 
+            border: { display: false } 
+          }
+        }
+      }
+    });
+  }
+}
+
+// Export to CSV / Excel
+function exportarExcel() {
+  const scopedData = getScopedData();
+  if (scopedData.length === 0) {
+    alert("Não há dados para exportar.");
+    return;
+  }
+
+  const headers = ["UNIDADE", "ROTA", "MOTORISTA", "PLACA", "DOCA", "CONFERENTE", "INICIO", "FIM", "TEMPO_MIN", "ISCA", "RETORNO_ISCA", "STATUS_LIBERADA", "OBSERVACOES"];
+  const rows = scopedData.map(r => {
+    const tempoMin = r.inicio && r.fim ? calcDurationMinutes(r.inicio, r.fim) : '';
+    return [
+      `"${r.unidade || ''}"`,
+      `"${r.rota || ''}"`,
+      `"${r.motorista || ''}"`,
+      `"${r.placa || ''}"`,
+      `"${r.doca || ''}"`,
+      `"${r.conferente || ''}"`,
+      `"${r.inicio || ''}"`,
+      `"${r.fim || ''}"`,
+      `"${tempoMin}"`,
+      `"${r.isca || ''}"`,
+      `"${r.retornoIsca || ''}"`,
+      `"${r.placaLiberada ? 'LIBERADA' : 'NORMAL'}"`,
+      `"${(r.obs || '').replace(/"/g, '""')}"`
+    ].join(';');
+  });
+
+  const csvContent = "\uFEFF" + headers.join(';') + "\r\n" + rows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const unitStr = state.activeUnidade.replace(/[^a-zA-Z0-9]/g, '_');
+  a.href = url;
+  a.download = `Controle_Docas_${unitStr}_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Fullscreen TV Mode
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.warn("Fullscreen não suportado ou bloqueado:", err);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// Reset Demo Data
+function resetDemoData() {
+  if (confirm("Deseja restaurar os registros originais da imagem da BBM Logística? Seus lançamentos atuais serão substituídos.")) {
+    state.registros = JSON.parse(JSON.stringify(SEED_DATA));
+    saveData();
+    renderApp();
+  }
+}
+
+// Event Listeners Setup
+function setupEventListeners() {
+  const mainSelect = document.getElementById('select-unidade');
+  mainSelect.addEventListener('change', (e) => {
+    state.activeUnidade = e.target.value;
+    localStorage.setItem(STORAGE_KEY_ACTIVE_UNIT, state.activeUnidade);
+    state.filterDoca = '';
+    const docaSelect = document.getElementById('filter-doca');
+    if (docaSelect) docaSelect.value = '';
+    renderApp();
+  });
+
+  document.getElementById('btn-gerenciar-unidades').addEventListener('click', abrirModalUnidades);
+  document.getElementById('btn-close-modal-unidades').addEventListener('click', fecharModalUnidades);
+  document.getElementById('btn-fechar-unidades').addEventListener('click', fecharModalUnidades);
+  document.getElementById('form-nova-unidade').addEventListener('submit', adicionarNovaUnidade);
+
+  document.getElementById('btn-close-modal').addEventListener('click', fecharModalRegistro);
+  document.getElementById('btn-cancelar-form').addEventListener('click', fecharModalRegistro);
+  document.getElementById('form-registro').addEventListener('submit', salvarFormRegistro);
+
+  document.getElementById('btn-now-inicio').addEventListener('click', () => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('form-inicio').value = `${hh}:${mm}`;
+  });
+
+  document.getElementById('btn-now-fim').addEventListener('click', () => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('form-fim').value = `${hh}:${mm}`;
+  });
+
+  const pillBtns = document.querySelectorAll('.pill-btn');
+  pillBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      pillBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.filterStatus = btn.getAttribute('data-filter-status');
+      renderTable();
+    });
+  });
+
+  const docaFilter = document.getElementById('filter-doca');
+  if (docaFilter) {
+    docaFilter.addEventListener('change', (e) => {
+      state.filterDoca = e.target.value;
+      renderTable();
+    });
+  }
+
+  const searchInput = document.getElementById('input-search');
+  const clearBtn = document.getElementById('btn-clear-search');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      state.searchTerm = e.target.value;
+      if (clearBtn) clearBtn.style.display = state.searchTerm ? 'block' : 'none';
+      renderTable();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      state.searchTerm = '';
+      clearBtn.style.display = 'none';
+      renderTable();
+    });
+  }
+
+  document.getElementById('btn-export-excel').addEventListener('click', exportarExcel);
+  document.getElementById('btn-print-table').addEventListener('click', () => window.print());
+  document.getElementById('btn-reset-demo').addEventListener('click', resetDemoData);
+  document.getElementById('btn-toggle-theme').addEventListener('click', toggleTheme);
+  document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
+
+  // Logout
+  const btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', realizarLogout);
+  }
+
+  // Gestão de Usuários (Admin)
+  const btnAdminUsers = document.getElementById('btn-admin-users');
+  if (btnAdminUsers) {
+    btnAdminUsers.addEventListener('click', abrirModalUsuarios);
+  }
+
+  const btnCloseModalUsers = document.getElementById('btn-close-modal-usuarios');
+  if (btnCloseModalUsers) btnCloseModalUsers.addEventListener('click', fecharModalUsuarios);
+
+  const btnFecharUsers = document.getElementById('btn-fechar-usuarios');
+  if (btnFecharUsers) btnFecharUsers.addEventListener('click', fecharModalUsuarios);
+
+  const formNovoUsuario = document.getElementById('form-novo-usuario');
+  if (formNovoUsuario) {
+    formNovoUsuario.addEventListener('submit', cadastrarNovoUsuario);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      fecharModalRegistro();
+      fecharModalUnidades();
+      fecharModalUsuarios();
+    }
+  });
+}
+
+// ==========================================
+// FUNÇÕES DE AUTENTICAÇÃO E ADMINISTRAÇÃO
+// ==========================================
+
+async function realizarLogout() {
+  if (confirm("Deseja realmente encerrar a sessão?")) {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {}
+    localStorage.removeItem('bbm_logged_user');
+    window.location.href = '/login.html';
+  }
+}
+
+function abrirModalUsuarios() {
+  document.getElementById('modal-usuarios').style.display = 'flex';
+  carregarListaUsuarios();
+}
+
+function fecharModalUsuarios() {
+  const modal = document.getElementById('modal-usuarios');
+  if (modal) modal.style.display = 'none';
+}
+
+async function carregarListaUsuarios() {
+  const tbody = document.getElementById('lista-usuarios-cadastrados');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 12px; color: var(--text-secondary);">Carregando usuários...</td></tr>`;
+
+  try {
+    const res = await fetch('/api/admin/users');
+    if (!res.ok) throw new Error('Falha ao carregar');
+    const users = await res.json();
+
+    if (!users || users.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 12px;">Nenhum usuário cadastrado.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.email}</td>
+        <td><code>${u.matricula}</code></td>
+        <td><span class="pill-badge ${u.role === 'admin' ? 'status-ok' : ''}" style="font-size:0.75rem; padding: 2px 6px;">${u.role === 'admin' ? 'Administrador' : 'Operador'}</span></td>
+        <td>${u.unidade || 'CD São Paulo'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 12px;">Erro ao carregar usuários ou permissão negada.</td></tr>`;
+  }
+}
+
+async function cadastrarNovoUsuario(e) {
+  e.preventDefault();
+  const name = document.getElementById('input-user-name').value.trim();
+  const email = document.getElementById('input-user-email').value.trim();
+  const matricula = document.getElementById('input-user-matricula').value.trim();
+  const password = document.getElementById('input-user-pass').value;
+  const role = document.getElementById('select-user-role').value;
+  const unidade = document.getElementById('select-user-unidade').value;
+
+  if (!name || !email || !matricula || !password) {
+    alert("Preencha todos os campos obrigatórios.");
+    return;
+  }
+
+  const btn = document.getElementById('btn-save-new-user');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Cadastrando...`;
+
+  try {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, matricula, password, role, unidade })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      alert("Usuário cadastrado com sucesso!");
+      document.getElementById('form-novo-usuario').reset();
+      carregarListaUsuarios();
+    } else {
+      alert(data.error || "Erro ao cadastrar usuário.");
+    }
+  } catch (err) {
+    alert("Erro na conexão com o servidor.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-user-plus"></i> Cadastrar Usuário`;
+  }
+}
+

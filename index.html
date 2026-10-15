@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Controle Operacional de Docas & Dashboard — BBM Logística</title>
+  <!-- Google Fonts: Inter, Outfit, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js for Dashboard Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-light">
+  <!-- Top Corporate Ribbon / Header -->
+  <header class="corp-header" id="main-header">
+    <div class="header-inner">
+      
+      <!-- Left: Official BBM Logo + Title -->
+      <div class="header-branding">
+        <div class="bbm-logo-box" title="BBM Logística">
+          <img src="logo_bbm.png" alt="BBM Logística" class="bbm-official-img">
+        </div>
+        
+        <div class="brand-divider-vert"></div>
+
+        <div class="header-partner-tags">
+          <div class="system-title-tag">
+            <h1>CONTROLE DE DOCAS</h1>
+            <span class="system-sub">BBM LOGÍSTICA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Prominent Unit Selector & Tools -->
+      <div class="header-center-controls">
+        <div class="unit-selector-wrapper">
+          <label for="select-unidade" class="unit-label" title="Unidade Operacional">
+            <i class="fa-solid fa-warehouse"></i>
+          </label>
+          <div class="custom-select-container">
+            <select id="select-unidade" class="unit-select" title="Selecione a Unidade Operacional">
+              <option value="todas">🌐 Visão Geral (Todas as Unidades)</option>
+              <option value="CD São Paulo" selected>📍 CD São Paulo (Matriz)</option>
+              <option value="CD Curitiba">📍 CD Curitiba (PR)</option>
+              <option value="CD Rio de Janeiro">📍 CD Rio de Janeiro (RJ)</option>
+              <option value="CD Belo Horizonte">📍 CD Belo Horizonte (MG)</option>
+              <option value="CD Porto Alegre">📍 CD Porto Alegre (RS)</option>
+            </select>
+            <button id="btn-gerenciar-unidades" class="btn-icon-addon" onclick="abrirModalUnidades()" title="Gerenciar / Adicionar Unidades">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="header-tool-buttons">
+          <button id="btn-toggle-theme" class="btn-tool" title="Alternar Modo Escuro / Claro">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+          <button id="btn-fullscreen" class="btn-tool" title="Modo Telão / TV de Doca">
+            <i class="fa-solid fa-expand"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Far Right: User Badge & Live Date and Digital Clock -->
+      <div class="header-clock-far-right">
+        <!-- User Session Indicator -->
+        <div class="header-user-card" id="header-user-card">
+          <div class="user-avatar" id="user-avatar" title="Perfil"><i class="fa-solid fa-user-shield"></i></div>
+          <div class="user-text-info">
+            <span class="user-name" id="user-display-name">Carregando...</span>
+            <span class="user-role-badge" id="user-display-role">Operador</span>
+          </div>
+          <button id="btn-admin-users" class="btn-user-action" title="Gerenciar Usuários (Admin)" style="display: none;">
+            <i class="fa-solid fa-users-gear"></i>
+          </button>
+          <button id="btn-logout" class="btn-user-action logout" title="Encerrar Sessão">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+
+        <div class="live-clock-card">
+          <div class="live-time" id="live-time">00:00:00</div>
+          <div class="live-date" id="live-date">Carregando data...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Navigation Tabs (Aba 1: Grade de Docas | Aba 2: Dashboard) -->
+    <nav class="sub-nav-bar">
+      <div class="sub-nav-inner">
+        <div class="tabs-group">
+          <button class="nav-tab-btn active" id="tab-btn-docas" onclick="alternarAba('docas')">
+            <i class="fa-solid fa-table-list"></i>
+            <span>Controle de Docas</span>
+          </button>
+          <button class="nav-tab-btn" id="tab-btn-dashboard" onclick="alternarAba('dashboard')">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Dashboard Operacional</span>
+            <span class="tab-badge-new">Analytics</span>
+          </button>
+        </div>
+
+        <div class="sub-nav-unit-indicator">
+          <span class="unit-ind-label">Monitorando:</span>
+          <span class="unit-ind-val" id="top-indicator-unit">CD São Paulo (Matriz)</span>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    
+    <!-- ==========================================
+         TAB 1: CONTROLE DE DOCAS (GRADE OPERACIONAL)
+         ========================================== -->
+    <div id="view-docas" class="tab-view active-view">
+      
+      <!-- KPI Summary Cards -->
+      <section class="kpi-grid">
+        <div class="kpi-card total-card">
+          <div class="kpi-icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
+          <div class="kpi-data">
+            <span class="kpi-title">TOTAL DE VEÍCULOS / ROTAS</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-total">0</span>
+              <span class="kpi-tag" id="kpi-active-unit-name">CD São Paulo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card loading-card">
+          <div class="kpi-icon"><i class="fa-solid fa-dolly"></i></div>
+          <div class="kpi-data">
+            <span class="kpi-title">EM CARREGAMENTO / NA DOCA</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-loading">0</span>
+              <span class="kpi-badge badge-warning">Em Operação</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card completed-card">
+          <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="kpi-data">
+            <span class="kpi-title">FINALIZADOS / EXPEDIDOS</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-completed">0</span>
+              <span class="kpi-badge badge-success">Concluídos</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card iscas-card">
+          <div class="kpi-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+          <div class="kpi-data">
+            <span class="kpi-title">ISCAS PENDENTES RETORNO</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-iscas-pendentes">0</span>
+              <span class="kpi-badge badge-danger" id="kpi-iscas-alert">Atenção</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-card avgtime-card">
+          <div class="kpi-icon"><i class="fa-solid fa-stopwatch"></i></div>
+          <div class="kpi-data">
+            <span class="kpi-title">TEMPO MÉDIO DE DOCA</span>
+            <div class="kpi-value-row">
+              <span class="kpi-value" id="kpi-tempo-medio">0 min</span>
+              <span class="kpi-subtext">Média Fim - Início</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Operational Filter & Action Toolbar -->
+      <section class="toolbar-section">
+        <div class="toolbar-left">
+          <button id="btn-novo-registro" class="btn-primary" onclick="abrirModalRegistro()">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>Novo Carregamento</span>
+          </button>
+
+          <!-- Quick Status Filter -->
+          <div class="filter-pills">
+            <button class="pill-btn active" data-filter-status="todos">Todos (<span id="count-pill-todos">0</span>)</button>
+            <button class="pill-btn" data-filter-status="andamento">Em Doca (<span id="count-pill-andamento">0</span>)</button>
+            <button class="pill-btn" data-filter-status="concluido">Concluídos (<span id="count-pill-concluido">0</span>)</button>
+            <button class="pill-btn pill-alert" data-filter-status="pendente_isca">Iscas s/ Retorno (<span id="count-pill-isca">0</span>)</button>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <!-- Quick Search -->
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="input-search" placeholder="Buscar motorista, placa, rota, doca..." autocomplete="off">
+            <button id="btn-clear-search" class="btn-clear" title="Limpar busca" style="display:none;">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Filter by Doca Dropdown -->
+          <select id="filter-doca" class="filter-dropdown" title="Filtrar por Doca">
+            <option value="">Todas as Docas</option>
+          </select>
+
+          <!-- Export & Print Actions -->
+          <div class="action-dropdown">
+            <button id="btn-export-excel" class="btn-secondary" title="Exportar tabela para Excel / CSV">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Exportar</span>
+            </button>
+            <button id="btn-print-table" class="btn-secondary" title="Imprimir Relatório Operacional">
+              <i class="fa-solid fa-print"></i>
+              <span>Imprimir</span>
+            </button>
+            <button id="btn-reset-demo" class="btn-ghost" title="Restaurar dados de exemplo da imagem">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Operational Table Component -->
+      <section class="table-container-card">
+        <div class="table-header-meta">
+          <div class="table-title">
+            <i class="fa-solid fa-list-check"></i>
+            <span id="table-active-title">Grade Operacional — CD São Paulo (Matriz)</span>
+          </div>
+          <div class="table-legend">
+            <span class="legend-item"><span class="legend-box plate-ready"></span> Placa Liberada</span>
+            <span class="legend-item"><span class="legend-box isca-ok"></span> Isca Retornada</span>
+            <span class="legend-item"><span class="legend-box isca-pendente"></span> Isca Pendente</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="grid-table" id="tabela-operacional">
+            <thead>
+              <tr>
+                <th class="th-rota">ROTA</th>
+                <th class="th-motorista">MOTORISTA</th>
+                <th class="th-placa">PLACA</th>
+                <th class="th-doca">DOCA</th>
+                <th class="th-conferente">CONFERENTE</th>
+                <th class="th-inicio">INÍCIO</th>
+                <th class="th-fim">FIM</th>
+                <th class="th-tempo">TEMPO</th>
+                <th class="th-isca">ISCA</th>
+                <th class="th-retorno">RETORNO ISCA</th>
+                <th class="th-acoes">AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-registros">
+              <!-- Dynamic rows rendered via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table Empty State -->
+        <div id="table-empty-state" class="empty-state" style="display: none;">
+          <i class="fa-solid fa-truck-moving empty-icon"></i>
+          <h3>Nenhum carregamento encontrado</h3>
+          <p>Não há registros correspondentes aos filtros selecionados para esta unidade.</p>
+          <button class="btn-primary" onclick="abrirModalRegistro()">
+            <i class="fa-solid fa-plus"></i> Inserir Carregamento
+          </button>
+        </div>
+
+        <!-- Table Footer / Count -->
+        <div class="table-footer-bar">
+          <div class="footer-left">
+            <span>Mostrando <strong id="footer-count-visible">0</strong> de <strong id="footer-count-total">0</strong> operações</span>
+          </div>
+          <div class="footer-right">
+            <span class="tip-text"><i class="fa-regular fa-lightbulb"></i> Clique no botão de <strong>Retorno Isca</strong> para alternar status rapidamente.</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==========================================
+         TAB 2: DASHBOARD ANALÍTICO C-LEVEL
+         ========================================== -->
+    <div id="view-dashboard" class="tab-view" style="display: none;">
+      
+      <!-- Charts Grid 1: Donuts e Colunas com Títulos Orientados a Insights -->
+      <section class="dash-charts-grid">
+        
+        <!-- Chart 1: Status de Carregamento (Donut Limpo com Centro) -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-title-group">
+              <h3 id="title-chart-status"><i class="fa-solid fa-circle-notch"></i> 82% das Cargas Finalizadas no Horário</h3>
+              <span class="chart-subtitle" id="subtitle-chart-status">Apenas 2 veículos permanecem em processo de doca</span>
+            </div>
+            <span class="chart-badge">Volume</span>
+          </div>
+          <div class="chart-body chart-body-donut">
+            <canvas id="chart-status-carregamento"></canvas>
+            <div class="donut-center-info" id="donut-center-status">
+              <span class="donut-center-val" id="donut-val-status">82%</span>
+              <span class="donut-center-lbl">Concluídos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 2: Controle de Iscas (Destaque Pré-Atencional no Risco) -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-title-group">
+              <h3 id="title-chart-iscas"><i class="fa-solid fa-satellite-dish text-danger"></i> 7 Iscas com Retorno Pendente</h3>
+              <span class="chart-subtitle" id="subtitle-chart-iscas">Risco de defasagem de estoque de rastreadores</span>
+            </div>
+            <span class="chart-badge badge-danger">Atenção</span>
+          </div>
+          <div class="chart-body chart-body-donut">
+            <canvas id="chart-status-iscas"></canvas>
+            <div class="donut-center-info" id="donut-center-iscas">
+              <span class="donut-center-val text-danger" id="donut-val-iscas">7</span>
+              <span class="donut-center-lbl">Pendentes</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 3: Movimentação por Doca (Foco no Gargalo) -->
+        <div class="chart-card chart-card-wide">
+          <div class="chart-card-header">
+            <div class="chart-title-group">
+              <h3 id="title-chart-docas"><i class="fa-solid fa-warehouse"></i> Doca 8 Concentra Maior Gargalo Operacional</h3>
+              <span class="chart-subtitle" id="subtitle-chart-docas">Destaque em laranja representa a doca com maior fluxo</span>
+            </div>
+            <span class="chart-badge">Capacidade</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="chart-ocupacao-docas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts Grid 2: Conferentes e Tabela de Ação Imediata -->
+      <section class="dash-charts-grid dash-grid-bottom">
+        
+        <!-- Chart 4: Produtividade por Conferente -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-title-group">
+              <h3 id="title-chart-conferentes"><i class="fa-solid fa-users-gear"></i> Distribuição de Trabalho da Equipe</h3>
+              <span class="chart-subtitle" id="subtitle-chart-conferentes">Conferências concluídas por operador no turno</span>
+            </div>
+            <span class="chart-badge">Produtividade</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="chart-conferentes"></canvas>
+          </div>
+        </div>
+
+        <!-- Panel 5: Tabela de Ação Imediata (Iscas Críticas) -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-title-group">
+              <h3><i class="fa-solid fa-triangle-exclamation text-danger"></i> Ação Imediata: Iscas Pendentes de Coleta</h3>
+              <span class="chart-subtitle">Registros que exigem baixa operacional imediata</span>
+            </div>
+            <span class="chart-badge badge-danger" id="dash-badge-pendentes">0 pendentes</span>
+          </div>
+          <div class="dash-table-wrap">
+            <table class="dash-mini-table">
+              <thead>
+                <tr>
+                  <th>ROTA</th>
+                  <th>MOTORISTA</th>
+                  <th>PLACA</th>
+                  <th>DOCA</th>
+                  <th>ISCA</th>
+                  <th>AÇÃO</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-dash-pendentes">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Modal: Adicionar / Editar Registro -->
+  <div class="modal-backdrop" id="modal-registro" style="display: none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-truck-ramp-box modal-icon"></i>
+          <div>
+            <h2 id="modal-title-text">Novo Carregamento</h2>
+            <span class="modal-subtitle">Controle de Doca e Rastreamento de Isca</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal" title="Fechar">&times;</button>
+      </div>
+
+      <form id="form-registro" class="modal-form">
+        <input type="hidden" id="form-id">
+
+        <div class="form-grid">
+          <!-- Unidade -->
+          <div class="form-group col-12">
+            <label for="form-unidade"><i class="fa-solid fa-warehouse"></i> Unidade Operacional *</label>
+            <select id="form-unidade" required>
+              <!-- Filled dynamically -->
+            </select>
+          </div>
+
+          <!-- Rota -->
+          <div class="form-group col-4">
+            <label for="form-rota"><i class="fa-solid fa-route"></i> Rota *</label>
+            <input type="text" id="form-rota" placeholder="Ex: 1A, 2A/B, 3C" required>
+          </div>
+
+          <!-- Placa -->
+          <div class="form-group col-4">
+            <label for="form-placa"><i class="fa-solid fa-id-card"></i> Placa do Veículo *</label>
+            <input type="text" id="form-placa" placeholder="ABC1D23" maxlength="8" required style="text-transform: uppercase;">
+          </div>
+
+          <!-- Doca -->
+          <div class="form-group col-4">
+            <label for="form-doca"><i class="fa-solid fa-door-open"></i> Doca *</label>
+            <input type="text" id="form-doca" placeholder="Ex: 8, 10, 11, 12" required>
+          </div>
+
+          <!-- Motorista -->
+          <div class="form-group col-8">
+            <label for="form-motorista"><i class="fa-solid fa-user"></i> Nome do Motorista *</label>
+            <input type="text" id="form-motorista" placeholder="Nome completo do motorista" required style="text-transform: uppercase;">
+          </div>
+
+          <!-- Conferente -->
+          <div class="form-group col-4">
+            <label for="form-conferente"><i class="fa-solid fa-clipboard-check"></i> Conferente *</label>
+            <input type="text" id="form-conferente" placeholder="Ex: JOÃO, NELSON" required style="text-transform: uppercase;">
+          </div>
+
+          <!-- Horário Início -->
+          <div class="form-group col-6">
+            <label for="form-inicio"><i class="fa-regular fa-clock"></i> Início do Carregamento *</label>
+            <div class="input-with-action">
+              <input type="time" id="form-inicio" required>
+              <button type="button" class="btn-input-action" id="btn-now-inicio" title="Inserir hora atual">Agora</button>
+            </div>
+          </div>
+
+          <!-- Horário Fim -->
+          <div class="form-group col-6">
+            <label for="form-fim"><i class="fa-solid fa-flag-checkered"></i> Término do Carregamento</label>
+            <div class="input-with-action">
+              <input type="time" id="form-fim">
+              <button type="button" class="btn-input-action" id="btn-now-fim" title="Inserir hora atual">Agora</button>
+            </div>
+          </div>
+
+          <!-- Código da Isca -->
+          <div class="form-group col-6">
+            <label for="form-isca"><i class="fa-solid fa-satellite-dish"></i> Número / Código da Isca</label>
+            <input type="text" id="form-isca" placeholder="Ex: 5583, ou deixe vazio para S/ISCA">
+          </div>
+
+          <!-- Retorno Isca -->
+          <div class="form-group col-6">
+            <label for="form-retorno-isca"><i class="fa-solid fa-arrow-rotate-left"></i> Retorno da Isca</label>
+            <select id="form-retorno-isca">
+              <option value="PENDENTE">🔴 Pendente de Retorno</option>
+              <option value="OK">🟢 Retornada (OK)</option>
+              <option value="S/ISCA">⚪ Sem Isca na Carga</option>
+            </select>
+          </div>
+
+          <!-- Placa Liberada / Status Destaque -->
+          <div class="form-group col-12">
+            <label class="checkbox-label">
+              <input type="checkbox" id="form-placa-liberada">
+              <span>Marcar placa com status liberado (fundo verde em destaque)</span>
+            </label>
+          </div>
+
+          <!-- Observações Adicionais -->
+          <div class="form-group col-12">
+            <label for="form-obs"><i class="fa-regular fa-comment-dots"></i> Observações da Operação (Opcional)</label>
+            <textarea id="form-obs" rows="2" placeholder="Observações de peso, lacres, notas fiscais ou restrições..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="btn-cancelar-form">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btn-salvar-registro">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar Operação
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Gerenciar Unidades -->
+  <div class="modal-backdrop" id="modal-unidades" style="display: none;">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-building-columns modal-icon"></i>
+          <div>
+            <h2>Gerenciar Unidades</h2>
+            <span class="modal-subtitle">Adicione filiais ou centros de distribuição</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal-unidades">&times;</button>
+      </div>
+
+      <div class="modal-body-padding">
+        <form id="form-nova-unidade" class="inline-add-form">
+          <input type="text" id="input-nova-unidade" placeholder="Ex: CD Campinas (SP)" required>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-plus"></i> Adicionar
+          </button>
+        </form>
+
+        <h4 class="section-subtitle">Unidades Cadastradas</h4>
+        <ul id="lista-unidades-cadastradas" class="unit-manage-list">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-fechar-unidades">Concluir</button>
+      </div>
+  <!-- Modal: Gerenciar Usuários (Administrador) -->
+  <div class="modal-backdrop" id="modal-usuarios" style="display: none;">
+    <div class="modal-box modal-box-md">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-users-gear modal-icon"></i>
+          <div>
+            <h2>Gestão de Usuários e Permissões</h2>
+            <span class="modal-subtitle">Cadastre novos operadores ou administradores</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal-usuarios">&times;</button>
+      </div>
+
+      <div class="modal-body-padding">
+        <!-- Formulário de Novo Usuário -->
+        <form id="form-novo-usuario" class="user-add-grid">
+          <div class="form-field">
+            <label>Nome Completo</label>
+            <input type="text" id="input-user-name" placeholder="Ex: Roberto Alves" required>
+          </div>
+          <div class="form-field">
+            <label>E-mail Corporativo</label>
+            <input type="email" id="input-user-email" placeholder="roberto@bbmlogistica.com.br" required>
+          </div>
+          <div class="form-field">
+            <label>Matrícula BBM</label>
+            <input type="text" id="input-user-matricula" placeholder="BBM-105" required>
+          </div>
+          <div class="form-field">
+            <label>Senha Inicial</label>
+            <input type="password" id="input-user-pass" placeholder="Definir senha forte" required>
+          </div>
+          <div class="form-field">
+            <label>Perfil de Acesso</label>
+            <select id="select-user-role" required>
+              <option value="operador">Operador / Conferente</option>
+              <option value="admin">Administrador (Total)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Unidade Padrão</label>
+            <select id="select-user-unidade" required>
+              <option value="CD São Paulo">CD São Paulo</option>
+              <option value="CD Curitiba">CD Curitiba</option>
+              <option value="CD Rio de Janeiro">CD Rio de Janeiro</option>
+              <option value="CD Belo Horizonte">CD Belo Horizonte</option>
+              <option value="CD Porto Alegre">CD Porto Alegre</option>
+            </select>
+          </div>
+          <div class="form-field-full">
+            <button type="submit" class="btn-primary" id="btn-save-new-user">
+              <i class="fa-solid fa-user-plus"></i> Cadastrar Usuário
+            </button>
+          </div>
+        </form>
+
+        <h4 class="section-subtitle" style="margin-top: 20px;">Usuários do Sistema</h4>
+        <div class="user-table-wrap">
+          <table class="user-manage-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Matrícula</th>
+                <th>Perfil</th>
+                <th>Unidade</th>
+              </tr>
+            </thead>
+            <tbody id="lista-usuarios-cadastrados">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-fechar-usuarios">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
