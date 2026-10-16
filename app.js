@@ -241,10 +241,12 @@ let state = {
   registros: [],
   activeUnidade: "CD São Paulo",
   activeTab: "docas", // 'docas' ou 'dashboard'
+  operationalMode: "ativos", // 'ativos', 'historico', 'todos'
   filterStatus: "todos",
   filterDoca: "",
   searchTerm: "",
   editingId: null,
+  confirmingIscaId: null,
   currentUser: null
 };
 
@@ -253,7 +255,8 @@ let charts = {
   statusCarregamento: null,
   statusIscas: null,
   ocupacaoDocas: null,
-  conferentes: null
+  conferentes: null,
+  topDemora: null
 };
 
 // Initializer
@@ -615,10 +618,32 @@ function renderTable() {
   const unitName = state.activeUnidade === 'todas' ? 'Visão Geral (Todas as Unidades)' : state.activeUnidade;
   tableTitle.textContent = `Grade Operacional — ${unitName}`;
 
-  let items = getScopedData();
+  const allScoped = getScopedData();
+  
+  // Contagens dos Modos Operacionais
+  const countAtivos = allScoped.filter(r => !r.arquivado && r.retornoIsca !== 'OK').length;
+  const countHistorico = allScoped.filter(r => r.arquivado || r.retornoIsca === 'OK').length;
+  const countTodos = allScoped.length;
+
+  const elModeAtivos = document.getElementById('mode-count-ativos');
+  const elModeHist = document.getElementById('mode-count-historico');
+  const elModeTodos = document.getElementById('mode-count-todos');
+  if (elModeAtivos) elModeAtivos.textContent = countAtivos;
+  if (elModeHist) elModeHist.textContent = countHistorico;
+  if (elModeTodos) elModeTodos.textContent = countTodos;
+
+  let items = [...allScoped];
+
+  // 1. Filtro por Modo Operacional (Ativos vs Histórico)
+  if (state.operationalMode === 'ativos') {
+    items = items.filter(r => !r.arquivado && r.retornoIsca !== 'OK');
+  } else if (state.operationalMode === 'historico') {
+    items = items.filter(r => r.arquivado || r.retornoIsca === 'OK');
+  }
+
   totalCountEl.textContent = items.length;
 
-  // Filter by Status Pill
+  // 2. Filtro por Status Pill
   if (state.filterStatus === 'andamento') {
     items = items.filter(r => !r.fim || r.fim.trim() === '');
   } else if (state.filterStatus === 'concluido') {
@@ -630,12 +655,12 @@ function renderTable() {
     });
   }
 
-  // Filter by Doca
+  // 3. Filtro por Doca
   if (state.filterDoca) {
     items = items.filter(r => (r.doca || '').trim() === state.filterDoca);
   }
 
-  // Filter by Search Query
+  // 4. Filtro por Busca de Texto
   if (state.searchTerm) {
     const q = state.searchTerm.toLowerCase();
     items = items.filter(r => {
@@ -696,14 +721,20 @@ function createTableRowHtml(record) {
   } else {
     const isOk = record.retornoIsca === 'OK';
     if (isOk) {
-      retornoBtnHtml = `<button class="retorno-btn-toggle status-ok" onclick="toggleRetornoIsca('${record.id}')" title="Isca devolvida. Clique para marcar como Pendente"><i class="fa-solid fa-check"></i> OK</button>`;
+      retornoBtnHtml = `<span class="retorno-btn-toggle status-ok" title="Isca devolvida fisicamente e arquivada"><i class="fa-solid fa-check"></i> OK</span>`;
     } else {
-      retornoBtnHtml = `<button class="retorno-btn-toggle status-pendente" onclick="toggleRetornoIsca('${record.id}')" title="Pendente de retorno! Clique para marcar como OK"><i class="fa-solid fa-triangle-exclamation"></i> PENDENTE</button>`;
+      retornoBtnHtml = `<button class="retorno-btn-toggle status-pendente" onclick="solicitarConfirmacaoIsca('${record.id}')" title="Pendente de retorno! Clique para abrir tela de confirmação e arquivamento"><i class="fa-solid fa-triangle-exclamation"></i> PENDENTE</button>`;
     }
   }
 
   const unitBadge = state.activeUnidade === 'todas' ? `<span style="font-size:0.7rem; color:var(--text-muted); display:block;">(${record.unidade})</span>` : '';
   const rowClass = record.destaqueLinha ? 'row-destacada' : '';
+
+  // Botão de restaurar para a grade ativa se o registro estiver arquivado/concluído
+  const isArchived = record.arquivado || record.retornoIsca === 'OK';
+  const restoreBtn = isArchived
+    ? `<button class="btn-table-action" onclick="reverterBaixaIsca('${record.id}')" title="Restaurar para a Grade Operacional Ativa" style="color:#10b981;"><i class="fa-solid fa-arrow-rotate-left"></i></button>`
+    : '';
 
   return `
     <tr id="row-${record.id}" class="${rowClass}">
@@ -727,6 +758,7 @@ function createTableRowHtml(record) {
       <td class="td-retorno">${retornoBtnHtml}</td>
       <td class="td-acoes">
         <div class="action-btns-wrap">
+          ${restoreBtn}
           <button class="btn-table-action" onclick="editarRegistro('${record.id}')" title="Editar Operação">
             <i class="fa-regular fa-pen-to-square"></i>
           </button>
@@ -977,22 +1009,74 @@ function renderDashboardCharts() {
   const iscasPendentes = comIsca.length - iscasOk;
   const taxaIsca = comIsca.length > 0 ? Math.round((iscasOk / comIsca.length) * 100) : 100;
 
-  // Eficiência de Doca (operações finalizadas em até 45 min)
-  let noPrazo = 0;
+  // Cálculo de durações de permanência em doca
+  const durations = [];
   scopedData.forEach(r => {
     if (r.inicio && r.fim) {
-      const d = calcDurationMinutes(r.inicio, r.fim);
-      if (d <= 45) noPrazo++;
+      const min = calcDurationMinutes(r.inicio, r.fim);
+      if (min >= 0) {
+        durations.push({
+          id: r.id,
+          placa: r.placa,
+          motorista: r.motorista,
+          doca: r.doca,
+          rota: r.rota,
+          conferente: r.conferente,
+          inicio: r.inicio,
+          fim: r.fim,
+          minutos: min
+        });
+      }
     }
+  });
+
+  // Ordena do mais demorado para o menos demorado
+  durations.sort((a, b) => b.minutos - a.minutos);
+
+  const totalMinutosDoca = durations.reduce((acc, d) => acc + d.minutos, 0);
+  const mediaMinDoca = durations.length > 0 ? Math.round(totalMinutosDoca / durations.length) : 0;
+  const maiorDur = durations.length > 0 ? durations[0] : null;
+
+  // Eficiência de Doca (operações finalizadas em até 45 min)
+  let noPrazo = 0;
+  durations.forEach(d => {
+    if (d.minutos <= 45) noPrazo++;
   });
   const taxaEficiencia = concluidos > 0 ? Math.round((noPrazo / concluidos) * 100) : 100;
   const pctConcluidos = total > 0 ? Math.round((concluidos / total) * 100) : 0;
 
-  // KPIs Header
-  const elEfic = document.getElementById('dash-stat-eficiencia');
-  const elTaxa = document.getElementById('dash-stat-taxa-isca');
-  if (elEfic) elEfic.textContent = `${taxaEficiencia}%`;
-  if (elTaxa) elTaxa.textContent = `${taxaIsca}%`;
+  // Atualização dos novos cards do Top Executive Ribbon
+  const elDashTempo = document.getElementById('dash-tempo-medio');
+  const elDashSla = document.getElementById('dash-tempo-sla');
+  const elDashMaior = document.getElementById('dash-maior-tempo');
+  const elDashPlacaGargalo = document.getElementById('dash-placa-gargalo');
+  const elDashGargaloSub = document.getElementById('dash-gargalo-sub');
+  const elDashEfic = document.getElementById('dash-eficiencia-val');
+  const elDashEficBadge = document.getElementById('dash-eficiencia-badge');
+  const elDashGiroVal = document.getElementById('dash-giro-val');
+  const elDashGiroPct = document.getElementById('dash-giro-pct');
+
+  if (elDashTempo) elDashTempo.textContent = `${mediaMinDoca} min`;
+  if (elDashSla) {
+    if (mediaMinDoca <= 35) {
+      elDashSla.textContent = `Meta: ≤ 35 min (Dentro da Meta)`;
+      elDashSla.className = `dash-kpi-badge status-good`;
+    } else {
+      elDashSla.textContent = `Meta: ≤ 35 min (Acima do Padrão)`;
+      elDashSla.className = `dash-kpi-badge badge-danger`;
+    }
+  }
+
+  if (elDashMaior) elDashMaior.textContent = maiorDur ? `${maiorDur.minutos} min` : `0 min`;
+  if (elDashPlacaGargalo) elDashPlacaGargalo.textContent = maiorDur ? `Placa ${maiorDur.placa}` : `-`;
+  if (elDashGargaloSub) elDashGargaloSub.textContent = maiorDur ? `Doca ${maiorDur.doca} • ${maiorDur.motorista.split(' ')[0]}` : `Nenhum veículo`;
+  if (elDashEfic) elDashEfic.textContent = `${taxaEficiencia}%`;
+  if (elDashEficBadge) {
+    elDashEficBadge.textContent = taxaEficiencia >= 80 ? 'No Prazo' : 'Gargalo';
+    elDashEficBadge.className = taxaEficiencia >= 80 ? 'dash-kpi-badge status-good' : 'dash-kpi-badge badge-danger';
+  }
+  if (elDashGiroVal) elDashGiroVal.textContent = `${concluidos} / ${total}`;
+  if (elDashGiroPct) elDashGiroPct.textContent = `${pctConcluidos}%`;
 
   // Docas counts
   const docaCounts = {};
@@ -1030,9 +1114,9 @@ function renderDashboardCharts() {
     } else {
       narrativeEl.innerHTML = `
         A operação de <strong>${escapeHtml(unitLabel)}</strong> registra <strong>${pctConcluidos}% das cargas concluídas</strong> (${concluidos} de ${total} viagens expedidas).
-        O índice de pontualidade em doca atinge <strong>${taxaEficiencia}%</strong> dentro do SLA meta (≤ 45 min). 
+        O tempo médio em doca é de <strong>${mediaMinDoca} minutos</strong> (SLA de pontualidade: <strong>${taxaEficiencia}%</strong>). 
         ${iscasPendentes > 0 
-          ? `O ponto prioritário de atenção executiva é o risco em <span class="highlight-alert">${iscasPendentes} isca(s) aguardando devolução</span> (${taxaIsca}% recolhidas), com maior concentração de fluxo na <strong>Doca ${escapeHtml(topDoca)}</strong> (${topDocaCount} veículos).`
+          ? `O ponto de atenção executiva é o risco em <span class="highlight-alert">${iscasPendentes} isca(s) aguardando devolução</span> (${taxaIsca}% recolhidas), com maior fluxo na <strong>Doca ${escapeHtml(topDoca)}</strong>.`
           : `Excelente desempenho de segurança: <strong>100% das iscas foram recolhidas</strong> e não há pendências de rastreadores em aberto.`
         }
       `;
@@ -1040,7 +1124,6 @@ function renderDashboardCharts() {
   }
 
   // 2. Actionable Declarative Headings for Charts
-  // Chart 1 Headings
   const titleStatus = document.getElementById('title-chart-status');
   const subStatus = document.getElementById('subtitle-chart-status');
   const donutValStatus = document.getElementById('donut-val-status');
@@ -1048,7 +1131,6 @@ function renderDashboardCharts() {
   if (subStatus) subStatus.textContent = `${concluidos} expedidos | ${emAndamento} veículo(s) ainda em operação`;
   if (donutValStatus) donutValStatus.textContent = `${pctConcluidos}%`;
 
-  // Chart 2 Headings (Iscas)
   const titleIscas = document.getElementById('title-chart-iscas');
   const subIscas = document.getElementById('subtitle-chart-iscas');
   const donutValIscas = document.getElementById('donut-val-iscas');
@@ -1065,13 +1147,11 @@ function renderDashboardCharts() {
     donutValIscas.className = iscasPendentes > 0 ? 'donut-center-val text-danger' : 'donut-center-val';
   }
 
-  // Chart 3 Headings (Docas)
   const titleDocas = document.getElementById('title-chart-docas');
   const subDocas = document.getElementById('subtitle-chart-docas');
   if (titleDocas) titleDocas.innerHTML = `<i class="fa-solid fa-warehouse"></i> Doca ${escapeHtml(topDoca)} Lidera Demanda (${topDocaPct}% do Volume)`;
   if (subDocas) subDocas.textContent = `Destaque em laranja representa o ponto de maior concentração de veículos`;
 
-  // Chart 4 Headings (Conferentes)
   const titleConf = document.getElementById('title-chart-conferentes');
   const subConf = document.getElementById('subtitle-chart-conferentes');
   if (titleConf) titleConf.innerHTML = `<i class="fa-solid fa-users-gear"></i> ${escapeHtml(topConf)} Realizou Maior Volume de Conferências`;
@@ -1102,7 +1182,7 @@ function renderDashboardCharts() {
           <td><span style="color:#dc2626; font-weight:bold;">Doca ${escapeHtml(r.doca)}</span></td>
           <td><span style="color:#dc2626; font-weight:bold;">#${escapeHtml(r.isca)}</span></td>
           <td>
-            <button class="retorno-btn-toggle status-ok" style="padding:3px 9px; font-size:0.75rem;" onclick="toggleRetornoIsca('${r.id}')" title="Confirmar devolução da isca">
+            <button class="retorno-btn-toggle status-ok" style="padding:3px 9px; font-size:0.75rem;" onclick="solicitarConfirmacaoIsca('${r.id}')" title="Confirmar devolução da isca">
               <i class="fa-solid fa-check"></i> Baixar
             </button>
           </td>
@@ -1110,6 +1190,7 @@ function renderDashboardCharts() {
       `).join('');
     }
   }
+
 
   if (typeof Chart === 'undefined') return;
 
@@ -1137,7 +1218,8 @@ function renderDashboardCharts() {
             ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.fillText(`${val} unid.`, bar.x + 8, bar.y);
+            const unit = dataset.unitSuffix || (chart.canvas && chart.canvas.id === 'chart-top-demora' ? ' min' : ' atend.');
+            ctx.fillText(`${val}${unit}`, bar.x + 8, bar.y);
           } else {
             // Em cima da barra vertical
             ctx.fillStyle = (bar.options.backgroundColor === '#f97316') ? '#ea580c' : (isDark ? '#e2e8f0' : '#1e293b');
@@ -1302,13 +1384,98 @@ function renderDashboardCharts() {
             beginAtZero: true 
           },
           y: { 
-            ticks: { color: textColor, font: { weight: 700, size: 12 } }, 
+            ticks: { color: textColor }, 
             grid: { display: false }, 
             border: { display: false } 
           }
         }
       }
     });
+  }
+
+  // 5. Chart Ranking de Placas que Mais Demoraram (Horizontal Bar)
+  const topPlates = durations.slice(0, 6);
+  const ctxTop = document.getElementById('chart-top-demora');
+  if (ctxTop) {
+    if (charts.topDemora) charts.topDemora.destroy();
+    
+    if (topPlates.length > 0) {
+      const topLabels = topPlates.map(p => `${p.placa} (Doca ${p.doca})`);
+      const topDataVals = topPlates.map(p => p.minutos);
+      const topBarColors = topPlates.map(p => p.minutos > 40 ? '#ef4444' : (p.minutos > 30 ? '#f97316' : '#0284c7'));
+
+      charts.topDemora = new Chart(ctxTop, {
+        type: 'bar',
+        data: {
+          labels: topLabels,
+          datasets: [{
+            label: 'Minutos em Doca',
+            data: topDataVals,
+            backgroundColor: topBarColors,
+            borderRadius: 6,
+            maxBarThickness: 24,
+            unitSuffix: ' min'
+          }]
+        },
+        plugins: [dataLabelsPlugin],
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: {
+            padding: { right: 65 }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (item) => ` Tempo Total: ${item.raw} min`
+              }
+            }
+          },
+          scales: {
+            x: { 
+              grace: '20%',
+              ticks: { color: textColor, stepSize: 10 }, 
+              grid: { display: false }, 
+              border: { display: false }, 
+              beginAtZero: true 
+            },
+            y: { 
+              ticks: { color: textColor, font: { weight: 700, size: 12 } }, 
+              grid: { display: false }, 
+              border: { display: false } 
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // Renderiza a lista textual das Top Placas Críticas ao lado do gráfico
+  const listPlatesEl = document.getElementById('ranking-plates-list');
+  if (listPlatesEl) {
+    if (topPlates.length === 0) {
+      listPlatesEl.innerHTML = `<div style="text-align:center; padding:1.5rem; color:var(--text-muted);">Nenhum veículo com tempo de doca finalizado.</div>`;
+    } else {
+      listPlatesEl.innerHTML = topPlates.map((p, idx) => {
+        const timeClass = p.minutos > 40 ? 'time-critical' : (p.minutos > 30 ? 'time-warning' : 'time-normal');
+        return `
+          <div class="ranking-item-card">
+            <div class="ranking-item-left">
+              <span class="ranking-pos">#${idx + 1}</span>
+              <div class="ranking-plate-info">
+                <span class="ranking-plate-text">${escapeHtml(p.placa)}</span>
+                <span class="ranking-meta-sub">Doca ${escapeHtml(p.doca)} • Rota ${escapeHtml(p.rota)} • ${escapeHtml(p.motorista.split(' ')[0])}</span>
+              </div>
+            </div>
+            <span class="ranking-time-badge ${timeClass}">
+              <i class="fa-regular fa-clock"></i> ${p.minutos} min
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
   }
 }
 
@@ -1476,11 +1643,18 @@ function setupEventListeners() {
     formNovoUsuario.addEventListener('submit', cadastrarNovoUsuario);
   }
 
+  // Confirmação de Retorno de Isca (Anti-Erro)
+  const btnConfirmIsca = document.getElementById('btn-confirm-isca-submit');
+  if (btnConfirmIsca) {
+    btnConfirmIsca.addEventListener('click', confirmarBaixaIsca);
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       fecharModalRegistro();
       fecharModalUnidades();
       fecharModalUsuarios();
+      fecharModalConfirmIsca();
     }
   });
 }
@@ -1578,4 +1752,97 @@ async function cadastrarNovoUsuario(e) {
     btn.innerHTML = `<i class="fa-solid fa-user-plus"></i> Cadastrar Usuário`;
   }
 }
+
+// ==========================================
+// FUNÇÕES DE HISTÓRICO E CONFIRMAÇÃO DE ISCAS
+// ==========================================
+
+window.setOperationalMode = function(mode) {
+  state.operationalMode = mode;
+  document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById(`btn-mode-${mode}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const infoEl = document.getElementById('mode-status-info');
+  if (infoEl) {
+    if (mode === 'ativos') {
+      infoEl.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>Exibindo apenas veículos em doca e iscas aguardando devolução física.</span>`;
+    } else if (mode === 'historico') {
+      infoEl.innerHTML = `<i class="fa-solid fa-box-archive text-green"></i> <span>Exibindo histórico de viagens finalizadas com iscas baixadas no sistema.</span>`;
+    } else {
+      infoEl.innerHTML = `<i class="fa-solid fa-layer-group"></i> <span>Exibindo todos os registros (ativos e arquivados).</span>`;
+    }
+  }
+  renderTable();
+};
+
+window.solicitarConfirmacaoIsca = function(id) {
+  const rec = state.registros.find(r => r.id === id);
+  if (!rec) return;
+
+  state.confirmingIscaId = id;
+  const numEl = document.getElementById('confirm-isca-numero');
+  const motEl = document.getElementById('confirm-isca-motorista');
+  const plaEl = document.getElementById('confirm-isca-placa');
+  const rotEl = document.getElementById('confirm-isca-rota');
+  const docEl = document.getElementById('confirm-isca-doca');
+  const horEl = document.getElementById('confirm-isca-hora');
+
+  if (numEl) numEl.textContent = rec.isca || 'S/N';
+  if (motEl) motEl.textContent = rec.motorista || '-';
+  if (plaEl) plaEl.textContent = rec.placa || '-';
+  if (rotEl) rotEl.textContent = rec.rota || '-';
+  if (docEl) docEl.textContent = `Doca ${rec.doca || '-'}`;
+
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  if (horEl) horEl.textContent = `${hh}:${mm}`;
+
+  const modal = document.getElementById('modal-confirm-isca');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.fecharModalConfirmIsca = function() {
+  const modal = document.getElementById('modal-confirm-isca');
+  if (modal) modal.style.display = 'none';
+  state.confirmingIscaId = null;
+};
+
+window.confirmarBaixaIsca = function() {
+  if (!state.confirmingIscaId) return;
+  const rec = state.registros.find(r => r.id === state.confirmingIscaId);
+  if (rec) {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    
+    rec.retornoIsca = 'OK';
+    rec.arquivado = true;
+    rec.dataHoraBaixa = `${now.toLocaleDateString('pt-BR')} ${hh}:${mm}`;
+
+    // Se ainda não tinha hora fim registrada, preenche com a hora atual
+    if (!rec.fim || rec.fim.trim() === '') {
+      rec.fim = `${hh}:${mm}`;
+    }
+
+    saveData(rec);
+    fecharModalConfirmIsca();
+    renderApp();
+  }
+};
+
+window.reverterBaixaIsca = function(id) {
+  const rec = state.registros.find(r => r.id === id);
+  if (!rec) return;
+
+  if (confirm(`Deseja reverter a baixa da isca #${rec.isca} (Placa ${rec.placa}) e restaurar o veículo para a grade operacional ativa?`)) {
+    rec.retornoIsca = 'PENDENTE';
+    rec.arquivado = false;
+    rec.dataHoraBaixa = null;
+    saveData(rec);
+    renderApp();
+  }
+};
+
 

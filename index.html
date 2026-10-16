@@ -180,6 +180,32 @@
         </div>
       </section>
 
+      <!-- Operational Mode Switcher: Operação Ativa vs Histórico de Concluídos -->
+      <section class="mode-switcher-container">
+        <div class="view-mode-tabs">
+          <button class="view-mode-btn active" id="btn-mode-ativos" onclick="setOperationalMode('ativos')">
+            <i class="fa-solid fa-truck-fast"></i>
+            <span>Em Operação (Ativos)</span>
+            <span class="mode-badge" id="mode-count-ativos">0</span>
+          </button>
+          <button class="view-mode-btn" id="btn-mode-historico" onclick="setOperationalMode('historico')">
+            <i class="fa-solid fa-box-archive"></i>
+            <span>Histórico / Baixas Concluídas</span>
+            <span class="mode-badge" id="mode-count-historico">0</span>
+          </button>
+          <button class="view-mode-btn" id="btn-mode-todos" onclick="setOperationalMode('todos')">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Todos os Registros</span>
+            <span class="mode-badge" id="mode-count-todos">0</span>
+          </button>
+        </div>
+
+        <div class="mode-status-info" id="mode-status-info">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Exibindo apenas veículos em doca e iscas aguardando devolução física.</span>
+        </div>
+      </section>
+
       <!-- Operational Filter & Action Toolbar -->
       <section class="toolbar-section">
         <div class="toolbar-left">
@@ -294,6 +320,81 @@
          ========================================== -->
     <div id="view-dashboard" class="tab-view" style="display: none;">
       
+      <!-- Top Executive KPI Ribbon: Tempo Médio & Gargalos -->
+      <section class="dash-kpi-ribbon">
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-icon icon-blue"><i class="fa-solid fa-stopwatch"></i></div>
+          <div class="dash-kpi-content">
+            <span class="dash-kpi-title">Tempo Médio em Doca</span>
+            <div class="dash-kpi-val-row">
+              <strong class="dash-kpi-val" id="dash-tempo-medio">0 min</strong>
+              <span class="dash-kpi-badge status-good" id="dash-tempo-sla">Meta BBM: ≤ 35 min</span>
+            </div>
+            <span class="dash-kpi-sub">Média de permanência das operações finalizadas</span>
+          </div>
+        </div>
+
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-icon icon-warn"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div class="dash-kpi-content">
+            <span class="dash-kpi-title">Maior Tempo Registrado</span>
+            <div class="dash-kpi-val-row">
+              <strong class="dash-kpi-val text-danger" id="dash-maior-tempo">0 min</strong>
+              <span class="dash-kpi-badge badge-danger" id="dash-placa-gargalo">-</span>
+            </div>
+            <span class="dash-kpi-sub" id="dash-gargalo-sub">Veículo com maior duração em doca</span>
+          </div>
+        </div>
+
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="dash-kpi-content">
+            <span class="dash-kpi-title">Eficiência de SLA (≤ 45 min)</span>
+            <div class="dash-kpi-val-row">
+              <strong class="dash-kpi-val" id="dash-eficiencia-val">0%</strong>
+              <span class="dash-kpi-badge" id="dash-eficiencia-badge">No Prazo</span>
+            </div>
+            <span class="dash-kpi-sub">Carregamentos realizados sem estouro de SLA</span>
+          </div>
+        </div>
+
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-icon icon-purple"><i class="fa-solid fa-truck-ramp-box"></i></div>
+          <div class="dash-kpi-content">
+            <span class="dash-kpi-title">Giro Operacional do Turno</span>
+            <div class="dash-kpi-val-row">
+              <strong class="dash-kpi-val" id="dash-giro-val">0 / 0</strong>
+              <span class="dash-kpi-badge" id="dash-giro-pct">0%</span>
+            </div>
+            <span class="dash-kpi-sub">Veículos expedidos sobre o total programado</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ranking das Placas que Mais Demoraram (Destaque C-Level) -->
+      <section class="dash-ranking-section">
+        <div class="chart-card chart-card-wide" id="card-ranking-demora">
+          <div class="chart-card-header">
+            <div class="chart-title-group">
+              <h3 id="title-chart-ranking"><i class="fa-solid fa-clock-rotate-left text-danger"></i> Ranking de Permanência: Placas que Mais Demoraram no Carregamento</h3>
+              <span class="chart-subtitle" id="subtitle-chart-ranking">Veículos com maior tempo total em doca (Início ao Fim) — Foco em redução de ociosidade</span>
+            </div>
+            <span class="chart-badge badge-danger">Gargalos Operacionais</span>
+          </div>
+          <div class="dash-ranking-container">
+            <div class="dash-ranking-chart-col">
+              <canvas id="chart-top-demora" style="max-height: 270px;"></canvas>
+            </div>
+            <div class="dash-ranking-list-col">
+              <div class="ranking-list-title"><i class="fa-solid fa-ranking-star"></i> Top Placas Mais Críticas</div>
+              <div class="ranking-items-list" id="ranking-plates-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Charts Grid 1: Donuts e Colunas com Títulos Orientados a Insights -->
       <section class="dash-charts-grid">
         
@@ -626,6 +727,66 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Modal: Confirmação de Retorno de Isca (Anti-Erro) -->
+  <div class="modal-backdrop" id="modal-confirm-isca" style="display: none;">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header modal-header-isca">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-satellite-dish modal-icon text-orange"></i>
+          <div>
+            <h2>Confirmar Devolução de Isca</h2>
+            <span class="modal-subtitle">Confirmação física de recolhimento do dispositivo</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal-isca" onclick="fecharModalConfirmIsca()">&times;</button>
+      </div>
+
+      <div class="modal-body-padding">
+        <div class="isca-confirm-card">
+          <div class="isca-number-badge">
+            <span class="isca-badge-label">Nº DA ISCA</span>
+            <span class="isca-badge-val" id="confirm-isca-numero">0000</span>
+          </div>
+
+          <div class="isca-details-grid">
+            <div class="isca-detail-item">
+              <span class="detail-label">Motorista:</span>
+              <strong id="confirm-isca-motorista">Nome do Motorista</strong>
+            </div>
+            <div class="isca-detail-item">
+              <span class="detail-label">Placa:</span>
+              <strong id="confirm-isca-placa">ABC1D23</strong>
+            </div>
+            <div class="isca-detail-item">
+              <span class="detail-label">Rota:</span>
+              <strong id="confirm-isca-rota">1A</strong>
+            </div>
+            <div class="isca-detail-item">
+              <span class="detail-label">Doca:</span>
+              <strong id="confirm-isca-doca">8</strong>
+            </div>
+            <div class="isca-detail-item">
+              <span class="detail-label">Horário de Baixa:</span>
+              <strong id="confirm-isca-hora">14:00</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert-info-box">
+          <i class="fa-solid fa-circle-check text-green"></i>
+          <span>Ao confirmar, a isca será marcada como <strong>OK</strong> e a linha será transferida da grade ativa para o <strong>Histórico de Baixas Concluídas</strong>.</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="btn-cancel-isca" onclick="fecharModalConfirmIsca()">Cancelar</button>
+        <button type="button" class="btn-primary btn-success-confirm" id="btn-confirm-isca-submit">
+          <i class="fa-solid fa-check"></i> Confirmar Baixa & Arquivar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=2"></script>
 </body>
 </html>

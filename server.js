@@ -62,6 +62,8 @@ db.exec(`
     placaLiberada INTEGER DEFAULT 0,
     destaqueLinha INTEGER DEFAULT 0,
     obs TEXT,
+    arquivado INTEGER DEFAULT 0,
+    dataHoraBaixa TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT
   );
@@ -71,6 +73,10 @@ db.exec(`
     name TEXT UNIQUE NOT NULL
   );
 `);
+
+// Migração segura para tabelas já existentes
+try { db.exec("ALTER TABLE dock_records ADD COLUMN arquivado INTEGER DEFAULT 0;"); } catch(e) {}
+try { db.exec("ALTER TABLE dock_records ADD COLUMN dataHoraBaixa TEXT;"); } catch(e) {}
 
 // Funções Criptográficas Seguras
 function hashPassword(password, salt) {
@@ -395,7 +401,8 @@ const server = http.createServer(async (req, res) => {
     const records = rows.map(r => ({
       ...r,
       placaLiberada: Boolean(r.placaLiberada),
-      destaqueLinha: Boolean(r.destaqueLinha)
+      destaqueLinha: Boolean(r.destaqueLinha),
+      arquivado: Boolean(r.arquivado)
     }));
 
     return sendJson(res, 200, records);
@@ -412,9 +419,9 @@ const server = http.createServer(async (req, res) => {
 
       const stmt = db.prepare(`
         INSERT INTO dock_records (
-          id, unidade, rota, motorista, placa, doca, conferente, inicio, fim, isca, retornoIsca, placaLiberada, destaqueLinha, obs, updated_at, updated_by
+          id, unidade, rota, motorista, placa, doca, conferente, inicio, fim, isca, retornoIsca, placaLiberada, destaqueLinha, obs, arquivado, dataHoraBaixa, updated_at, updated_by
         ) VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
         )
         ON CONFLICT(id) DO UPDATE SET
           unidade = excluded.unidade,
@@ -430,6 +437,8 @@ const server = http.createServer(async (req, res) => {
           placaLiberada = excluded.placaLiberada,
           destaqueLinha = excluded.destaqueLinha,
           obs = excluded.obs,
+          arquivado = excluded.arquivado,
+          dataHoraBaixa = excluded.dataHoraBaixa,
           updated_at = CURRENT_TIMESTAMP,
           updated_by = excluded.updated_by
       `);
@@ -449,6 +458,8 @@ const server = http.createServer(async (req, res) => {
         data.placaLiberada ? 1 : 0,
         data.destaqueLinha ? 1 : 0,
         data.obs || '',
+        data.arquivado ? 1 : 0,
+        data.dataHoraBaixa || null,
         user.name
       );
 
