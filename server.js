@@ -77,6 +77,10 @@ db.exec(`
 // Migração segura para tabelas já existentes
 try { db.exec("ALTER TABLE dock_records ADD COLUMN arquivado INTEGER DEFAULT 0;"); } catch(e) {}
 try { db.exec("ALTER TABLE dock_records ADD COLUMN dataHoraBaixa TEXT;"); } catch(e) {}
+try {
+  db.exec("UPDATE dock_records SET arquivado = 1 WHERE retornoIsca = 'OK';");
+  db.exec("UPDATE dock_records SET dataHoraBaixa = '16/10/2026 às ' || COALESCE(fim, '14:00') WHERE retornoIsca = 'OK' AND (dataHoraBaixa IS NULL OR dataHoraBaixa = '');");
+} catch(e) {}
 
 // Funções Criptográficas Seguras
 function hashPassword(password, salt) {
@@ -402,7 +406,7 @@ const server = http.createServer(async (req, res) => {
       ...r,
       placaLiberada: Boolean(r.placaLiberada),
       destaqueLinha: Boolean(r.destaqueLinha),
-      arquivado: Boolean(r.arquivado)
+      arquivado: Boolean(r.arquivado || r.retornoIsca === 'OK')
     }));
 
     return sendJson(res, 200, records);

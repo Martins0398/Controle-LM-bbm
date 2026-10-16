@@ -351,6 +351,15 @@ async function loadStorage() {
         const records = await resRecords.json();
         if (records && records.length > 0) {
           state.registros = records;
+          // Normaliza: qualquer registro com retornoIsca OK é arquivado para o Histórico
+          state.registros.forEach(r => {
+            if (r.retornoIsca === 'OK') {
+              r.arquivado = true;
+              if (!r.dataHoraBaixa) {
+                r.dataHoraBaixa = `16/10/2026 às ${r.fim || '14:00'}`;
+              }
+            }
+          });
           localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(state.registros));
           return;
         }
@@ -367,6 +376,16 @@ async function loadStorage() {
 
     const rawData = localStorage.getItem(STORAGE_KEY_DATA);
     state.registros = rawData ? JSON.parse(rawData) : [...SEED_DATA];
+
+    // Normaliza: qualquer registro com retornoIsca OK é arquivado para o Histórico
+    state.registros.forEach(r => {
+      if (r.retornoIsca === 'OK') {
+        r.arquivado = true;
+        if (!r.dataHoraBaixa) {
+          r.dataHoraBaixa = `16/10/2026 às ${r.fim || '14:00'}`;
+        }
+      }
+    });
 
     const savedUnit = localStorage.getItem(STORAGE_KEY_ACTIVE_UNIT);
     if (savedUnit && (savedUnit === 'todas' || state.unidades.includes(savedUnit))) {
@@ -529,13 +548,15 @@ function renderApp() {
 // KPI Calculations
 function renderKPIs() {
   const scopedData = getScopedData();
+  // Veículos ativos na grade operacional (operações do turno que ainda não deram baixa)
+  const ativos = scopedData.filter(r => !r.arquivado && r.retornoIsca !== 'OK');
 
-  const total = scopedData.length;
-  const emAndamento = scopedData.filter(r => !r.fim || r.fim.trim() === '').length;
-  const concluidos = scopedData.filter(r => r.fim && r.fim.trim() !== '').length;
-  const iscasPendentes = scopedData.filter(r => {
+  const total = ativos.length;
+  const emAndamento = ativos.filter(r => !r.fim || r.fim.trim() === '').length;
+  const concluidos = ativos.filter(r => r.fim && r.fim.trim() !== '').length;
+  const iscasPendentes = ativos.filter(r => {
     const iscaCode = (r.isca || '').trim().toUpperCase();
-    return iscaCode !== '' && iscaCode !== 'S/ISCA' && r.retornoIsca !== 'OK';
+    return iscaCode !== '' && iscaCode !== 'S/ISCA';
   }).length;
 
   let totalMinutos = 0;
@@ -631,8 +652,8 @@ function renderTable() {
   const badgeHist = document.getElementById('badge-historico-count');
   if (badgeHist) badgeHist.textContent = baixasScoped.length;
 
-  // Grade Operacional Ativa: exibe veículos em processo (não arquivados)
-  let items = allScoped.filter(r => !r.arquivado);
+  // Grade Operacional Ativa: APENAS veículos que ainda não deram baixa (se deu OK, sai imediatamente da tela)
+  let items = allScoped.filter(r => !r.arquivado && r.retornoIsca !== 'OK');
   totalCountEl.textContent = items.length;
 
   // 2. Filtro por Status Pill
@@ -711,22 +732,11 @@ function createTableRowHtml(record) {
   if (isSemIsca) {
     retornoBtnHtml = `<span class="retorno-btn-toggle status-sem-isca" title="Não aplicável">-</span>`;
   } else {
-    const isOk = record.retornoIsca === 'OK';
-    if (isOk) {
-      retornoBtnHtml = `<span class="retorno-btn-toggle status-ok" title="Isca devolvida fisicamente e arquivada"><i class="fa-solid fa-check"></i> OK</span>`;
-    } else {
-      retornoBtnHtml = `<button class="retorno-btn-toggle status-pendente" onclick="solicitarConfirmacaoIsca('${record.id}')" title="Pendente de retorno! Clique para abrir tela de confirmação e arquivamento"><i class="fa-solid fa-triangle-exclamation"></i> PENDENTE</button>`;
-    }
+    retornoBtnHtml = `<button class="retorno-btn-toggle status-pendente" onclick="solicitarConfirmacaoIsca('${record.id}')" title="Pendente de retorno! Clique para confirmar e transferir para o Histórico de Baixas"><i class="fa-solid fa-triangle-exclamation"></i> PENDENTE</button>`;
   }
 
   const unitBadge = state.activeUnidade === 'todas' ? `<span style="font-size:0.7rem; color:var(--text-muted); display:block;">(${record.unidade})</span>` : '';
   const rowClass = record.destaqueLinha ? 'row-destacada' : '';
-
-  // Botão de restaurar para a grade ativa se o registro estiver arquivado/concluído
-  const isArchived = record.arquivado || record.retornoIsca === 'OK';
-  const restoreBtn = isArchived
-    ? `<button class="btn-table-action" onclick="reverterBaixaIsca('${record.id}')" title="Restaurar para a Grade Operacional Ativa" style="color:#10b981;"><i class="fa-solid fa-arrow-rotate-left"></i></button>`
-    : '';
 
   return `
     <tr id="row-${record.id}" class="${rowClass}">
@@ -750,7 +760,6 @@ function createTableRowHtml(record) {
       <td class="td-retorno">${retornoBtnHtml}</td>
       <td class="td-acoes">
         <div class="action-btns-wrap">
-          ${restoreBtn}
           <button class="btn-table-action" onclick="editarRegistro('${record.id}')" title="Editar Operação">
             <i class="fa-regular fa-pen-to-square"></i>
           </button>
