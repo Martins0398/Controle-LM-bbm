@@ -452,21 +452,25 @@ window.alternarAba = function(tabName) {
   state.activeTab = tabName;
 
   const btnDocas = document.getElementById('tab-btn-docas');
+  const btnHist = document.getElementById('tab-btn-historico');
   const btnDash = document.getElementById('tab-btn-dashboard');
   const viewDocas = document.getElementById('view-docas');
+  const viewHist = document.getElementById('view-historico');
   const viewDash = document.getElementById('view-dashboard');
 
+  if (btnDocas) btnDocas.classList.toggle('active', tabName === 'docas');
+  if (btnHist) btnHist.classList.toggle('active', tabName === 'historico');
+  if (btnDash) btnDash.classList.toggle('active', tabName === 'dashboard');
+
+  if (viewDocas) viewDocas.style.display = tabName === 'docas' ? 'block' : 'none';
+  if (viewHist) viewHist.style.display = tabName === 'historico' ? 'block' : 'none';
+  if (viewDash) viewDash.style.display = tabName === 'dashboard' ? 'block' : 'none';
+
   if (tabName === 'docas') {
-    btnDocas.classList.add('active');
-    btnDash.classList.remove('active');
-    viewDocas.style.display = 'block';
-    viewDash.style.display = 'none';
     renderTable();
-  } else {
-    btnDocas.classList.remove('active');
-    btnDash.classList.add('active');
-    viewDocas.style.display = 'none';
-    viewDash.style.display = 'block';
+  } else if (tabName === 'historico') {
+    renderHistoricoTable();
+  } else if (tabName === 'dashboard') {
     renderDashboardCharts();
   }
 };
@@ -515,6 +519,8 @@ function renderApp() {
   renderDocaFilterOptions();
   if (state.activeTab === 'docas') {
     renderTable();
+  } else if (state.activeTab === 'historico') {
+    renderHistoricoTable();
   } else {
     renderDashboardCharts();
   }
@@ -620,27 +626,13 @@ function renderTable() {
 
   const allScoped = getScopedData();
   
-  // Contagens dos Modos Operacionais
-  const countAtivos = allScoped.filter(r => !r.arquivado && r.retornoIsca !== 'OK').length;
-  const countHistorico = allScoped.filter(r => r.arquivado || r.retornoIsca === 'OK').length;
-  const countTodos = allScoped.length;
+  // Atualiza badge de contagem de baixas na aba superior
+  const baixasScoped = allScoped.filter(r => r.arquivado || r.retornoIsca === 'OK');
+  const badgeHist = document.getElementById('badge-historico-count');
+  if (badgeHist) badgeHist.textContent = baixasScoped.length;
 
-  const elModeAtivos = document.getElementById('mode-count-ativos');
-  const elModeHist = document.getElementById('mode-count-historico');
-  const elModeTodos = document.getElementById('mode-count-todos');
-  if (elModeAtivos) elModeAtivos.textContent = countAtivos;
-  if (elModeHist) elModeHist.textContent = countHistorico;
-  if (elModeTodos) elModeTodos.textContent = countTodos;
-
-  let items = [...allScoped];
-
-  // 1. Filtro por Modo Operacional (Ativos vs Histórico)
-  if (state.operationalMode === 'ativos') {
-    items = items.filter(r => !r.arquivado && r.retornoIsca !== 'OK');
-  } else if (state.operationalMode === 'historico') {
-    items = items.filter(r => r.arquivado || r.retornoIsca === 'OK');
-  }
-
+  // Grade Operacional Ativa: exibe veículos em processo (não arquivados)
+  let items = allScoped.filter(r => !r.arquivado);
   totalCountEl.textContent = items.length;
 
   // 2. Filtro por Status Pill
@@ -1649,6 +1641,27 @@ function setupEventListeners() {
     btnConfirmIsca.addEventListener('click', confirmarBaixaIsca);
   }
 
+  // Histórico de Baixas: Busca e Exportação
+  const searchHistInput = document.getElementById('input-search-historico');
+  const clearHistBtn = document.getElementById('btn-clear-search-historico');
+  if (searchHistInput) {
+    searchHistInput.addEventListener('input', () => {
+      if (clearHistBtn) clearHistBtn.style.display = searchHistInput.value ? 'block' : 'none';
+      renderHistoricoTable();
+    });
+  }
+  if (clearHistBtn) {
+    clearHistBtn.addEventListener('click', () => {
+      searchHistInput.value = '';
+      clearHistBtn.style.display = 'none';
+      renderHistoricoTable();
+    });
+  }
+  const btnExportHist = document.getElementById('btn-export-historico');
+  if (btnExportHist) {
+    btnExportHist.addEventListener('click', exportarHistoricoExcel);
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       fecharModalRegistro();
@@ -1754,27 +1767,175 @@ async function cadastrarNovoUsuario(e) {
 }
 
 // ==========================================
-// FUNÇÕES DE HISTÓRICO E CONFIRMAÇÃO DE ISCAS
+// FUNÇÕES DA ABA HISTÓRICO DE BAIXAS & CONFIRMAÇÃO DE ISCAS
 // ==========================================
 
-window.setOperationalMode = function(mode) {
-  state.operationalMode = mode;
-  document.querySelectorAll('.view-mode-btn').forEach(b => b.classList.remove('active'));
-  const activeBtn = document.getElementById(`btn-mode-${mode}`);
-  if (activeBtn) activeBtn.classList.add('active');
+function renderHistoricoTable() {
+  const tbody = document.getElementById('tbody-historico');
+  const countEl = document.getElementById('historico-table-count');
+  const footerCountEl = document.getElementById('hist-footer-count');
+  const unitTag = document.getElementById('historico-table-unit');
+  const kpiTotalEl = document.getElementById('hist-total-baixas');
+  const kpiUltimaDataEl = document.getElementById('hist-ultima-data');
+  const kpiUltimaInfoEl = document.getElementById('hist-ultima-info');
+  const kpiIscasOkEl = document.getElementById('hist-iscas-ok-count');
+  const kpiUnitTag = document.getElementById('hist-unit-tag');
 
-  const infoEl = document.getElementById('mode-status-info');
-  if (infoEl) {
-    if (mode === 'ativos') {
-      infoEl.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>Exibindo apenas veículos em doca e iscas aguardando devolução física.</span>`;
-    } else if (mode === 'historico') {
-      infoEl.innerHTML = `<i class="fa-solid fa-box-archive text-green"></i> <span>Exibindo histórico de viagens finalizadas com iscas baixadas no sistema.</span>`;
-    } else {
-      infoEl.innerHTML = `<i class="fa-solid fa-layer-group"></i> <span>Exibindo todos os registros (ativos e arquivados).</span>`;
+  const unitName = state.activeUnidade === 'todas' ? 'Visão Geral (Todas as Unidades)' : state.activeUnidade;
+  if (unitTag) unitTag.textContent = unitName;
+  if (kpiUnitTag) kpiUnitTag.textContent = unitName;
+
+  const allScoped = getScopedData();
+  // Registros que foram baixados / arquivados
+  let baixas = allScoped.filter(r => r.arquivado || r.retornoIsca === 'OK');
+
+  // Garante que todo item arquivado tenha uma dataHoraBaixa amigável com a data atual
+  const hojeStr = new Date().toLocaleDateString('pt-BR');
+  baixas.forEach(r => {
+    if (!r.dataHoraBaixa) {
+      r.dataHoraBaixa = `${hojeStr} às ${r.fim || '14:00'}`;
     }
+  });
+
+  // Atualiza badge na aba superior
+  const badgeHist = document.getElementById('badge-historico-count');
+  if (badgeHist) badgeHist.textContent = baixas.length;
+
+  // Atualiza KPIs
+  if (kpiTotalEl) kpiTotalEl.textContent = baixas.length;
+  if (kpiIscasOkEl) kpiIscasOkEl.textContent = baixas.filter(r => r.retornoIsca === 'OK').length;
+  
+  if (baixas.length > 0) {
+    const ultima = baixas[baixas.length - 1];
+    if (kpiUltimaDataEl) kpiUltimaDataEl.textContent = ultima.dataHoraBaixa || '--/--/---- --:--';
+    if (kpiUltimaInfoEl) kpiUltimaInfoEl.textContent = `Placa: ${ultima.placa} • Doca ${ultima.doca} • ${ultima.motorista}`;
+  } else {
+    if (kpiUltimaDataEl) kpiUltimaDataEl.textContent = 'Nenhuma baixa';
+    if (kpiUltimaInfoEl) kpiUltimaInfoEl.textContent = 'Aguardando baixas operacionais';
   }
-  renderTable();
-};
+
+  // Filtro de busca no histórico
+  const searchInput = document.getElementById('input-search-historico');
+  const searchTerm = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+  let filtered = [...baixas];
+  if (searchTerm) {
+    filtered = filtered.filter(r => {
+      return (r.motorista || '').toLowerCase().includes(searchTerm) ||
+             (r.placa || '').toLowerCase().includes(searchTerm) ||
+             (r.rota || '').toLowerCase().includes(searchTerm) ||
+             (r.doca || '').toLowerCase().includes(searchTerm) ||
+             (r.isca || '').toLowerCase().includes(searchTerm) ||
+             (r.dataHoraBaixa || '').toLowerCase().includes(searchTerm);
+    });
+  }
+
+  if (countEl) countEl.textContent = `Mostrando ${filtered.length} de ${baixas.length} registros baixados`;
+  if (footerCountEl) footerCountEl.textContent = baixas.length;
+
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11">
+          <div class="empty-history-notice">
+            <i class="fa-solid fa-box-open"></i>
+            <p><strong>Nenhuma baixa encontrada ${searchTerm ? 'para a busca informada' : 'nesta unidade'}.</strong></p>
+            <span style="font-size:0.8rem; color:var(--text-muted);">As viagens finalizadas com confirmação de isca serão arquivadas e listadas aqui permanentemente com data e hora.</span>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => {
+    const initials = getInitials(r.motorista);
+    const durationMin = (r.inicio && r.fim) ? calcDurationMinutes(r.inicio, r.fim) : '-';
+    const iscaCode = (r.isca || '').trim().toUpperCase();
+    const isSemIsca = iscaCode === '' || iscaCode === 'S/ISCA';
+    const iscaBadge = isSemIsca
+      ? `<span class="isca-none">S/ISCA</span>`
+      : `<span style="font-family:monospace; font-weight:bold; color:#10b981;"><i class="fa-solid fa-satellite-dish"></i> #${escapeHtml(r.isca)}</span> <span class="retorno-btn-toggle status-ok" style="padding:2px 6px; font-size:0.7rem; pointer-events:none;"><i class="fa-solid fa-check"></i> RETORNADA</span>`;
+
+    return `
+      <tr>
+        <td>
+          <span class="badge-data-baixa">
+            <i class="fa-regular fa-calendar-check"></i>
+            ${escapeHtml(r.dataHoraBaixa || `${hojeStr} às 14:00`)}
+          </span>
+        </td>
+        <td class="td-rota"><strong>${escapeHtml(r.rota)}</strong></td>
+        <td class="td-motorista">
+          <div class="motorista-cell-inner">
+            <span class="driver-initials">${initials}</span>
+            <span>${escapeHtml(r.motorista)}</span>
+          </div>
+        </td>
+        <td class="td-placa"><span style="font-family:monospace; font-weight:800; letter-spacing:0.5px;">${escapeHtml(r.placa)}</span></td>
+        <td class="td-doca"><span style="font-weight:700; color:#2563eb;">Doca ${escapeHtml(r.doca)}</span></td>
+        <td class="td-conferente">${escapeHtml(r.conferente || '-')}</td>
+        <td class="td-inicio">${escapeHtml(r.inicio || '-')}</td>
+        <td class="td-fim">${escapeHtml(r.fim || '-')}</td>
+        <td class="td-tempo">
+          <span class="duration-badge duration-fast"><i class="fa-regular fa-clock"></i> ${durationMin} min</span>
+        </td>
+        <td class="td-isca">${iscaBadge}</td>
+        <td class="td-acoes" style="text-align: center;">
+          <button class="btn-reverter-baixa" onclick="reverterBaixaIsca('${r.id}')" title="Restaurar para a Grade Operacional Ativa">
+            <i class="fa-solid fa-arrow-rotate-left"></i> Reverter
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function exportarHistoricoExcel() {
+  const allScoped = getScopedData();
+  const baixas = allScoped.filter(r => r.arquivado || r.retornoIsca === 'OK');
+  
+  if (baixas.length === 0) {
+    alert("Nenhum registro de baixa disponível para exportação nesta unidade.");
+    return;
+  }
+
+  const hojeStr = new Date().toLocaleDateString('pt-BR');
+  const headers = ["DATA_BAIXA", "UNIDADE", "ROTA", "MOTORISTA", "PLACA", "DOCA", "CONFERENTE", "INICIO", "FIM", "TEMPO_TOTAL_MIN", "ISCA", "STATUS_RETORNO"];
+  const rows = baixas.map(r => {
+    const tempoMin = r.inicio && r.fim ? calcDurationMinutes(r.inicio, r.fim) : '';
+    const dataBaixa = r.dataHoraBaixa || `${hojeStr} às ${r.fim || '14:00'}`;
+    return [
+      `"${dataBaixa}"`,
+      `"${r.unidade || ''}"`,
+      `"${r.rota || ''}"`,
+      `"${r.motorista || ''}"`,
+      `"${r.placa || ''}"`,
+      `"${r.doca || ''}"`,
+      `"${r.conferente || ''}"`,
+      `"${r.inicio || ''}"`,
+      `"${r.fim || ''}"`,
+      `"${tempoMin}"`,
+      `"${r.isca || ''}"`,
+      `"CONCLUIDO/OK"`
+    ].join(';');
+  });
+
+  const csvContent = "\uFEFF" + headers.join(';') + "\r\n" + rows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const unitStr = state.activeUnidade.replace(/[^a-zA-Z0-9]/g, '_');
+  a.href = url;
+  a.download = `Historico_Baixas_${unitStr}_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 window.solicitarConfirmacaoIsca = function(id) {
   const rec = state.registros.find(r => r.id === id);
@@ -1795,9 +1956,12 @@ window.solicitarConfirmacaoIsca = function(id) {
   if (docEl) docEl.textContent = `Doca ${rec.doca || '-'}`;
 
   const now = new Date();
+  const dia = String(now.getDate()).padStart(2, '0');
+  const mes = String(now.getMonth() + 1).padStart(2, '0');
+  const ano = now.getFullYear();
   const hh = String(now.getHours()).padStart(2, '0');
   const mm = String(now.getMinutes()).padStart(2, '0');
-  if (horEl) horEl.textContent = `${hh}:${mm}`;
+  if (horEl) horEl.textContent = `${dia}/${mes}/${ano} às ${hh}:${mm}`;
 
   const modal = document.getElementById('modal-confirm-isca');
   if (modal) modal.style.display = 'flex';
@@ -1814,12 +1978,15 @@ window.confirmarBaixaIsca = function() {
   const rec = state.registros.find(r => r.id === state.confirmingIscaId);
   if (rec) {
     const now = new Date();
+    const dia = String(now.getDate()).padStart(2, '0');
+    const mes = String(now.getMonth() + 1).padStart(2, '0');
+    const ano = now.getFullYear();
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
     
     rec.retornoIsca = 'OK';
     rec.arquivado = true;
-    rec.dataHoraBaixa = `${now.toLocaleDateString('pt-BR')} ${hh}:${mm}`;
+    rec.dataHoraBaixa = `${dia}/${mes}/${ano} às ${hh}:${mm}`;
 
     // Se ainda não tinha hora fim registrada, preenche com a hora atual
     if (!rec.fim || rec.fim.trim() === '') {

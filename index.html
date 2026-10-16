@@ -99,6 +99,11 @@
             <i class="fa-solid fa-table-list"></i>
             <span>Controle de Docas</span>
           </button>
+          <button class="nav-tab-btn" id="tab-btn-historico" onclick="alternarAba('historico')">
+            <i class="fa-solid fa-box-archive"></i>
+            <span>Histórico de Baixas</span>
+            <span class="tab-badge-count" id="badge-historico-count">0</span>
+          </button>
           <button class="nav-tab-btn" id="tab-btn-dashboard" onclick="alternarAba('dashboard')">
             <i class="fa-solid fa-chart-pie"></i>
             <span>Dashboard Operacional</span>
@@ -177,32 +182,6 @@
               <span class="kpi-subtext">Média Fim - Início</span>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- Operational Mode Switcher: Operação Ativa vs Histórico de Concluídos -->
-      <section class="mode-switcher-container">
-        <div class="view-mode-tabs">
-          <button class="view-mode-btn active" id="btn-mode-ativos" onclick="setOperationalMode('ativos')">
-            <i class="fa-solid fa-truck-fast"></i>
-            <span>Em Operação (Ativos)</span>
-            <span class="mode-badge" id="mode-count-ativos">0</span>
-          </button>
-          <button class="view-mode-btn" id="btn-mode-historico" onclick="setOperationalMode('historico')">
-            <i class="fa-solid fa-box-archive"></i>
-            <span>Histórico / Baixas Concluídas</span>
-            <span class="mode-badge" id="mode-count-historico">0</span>
-          </button>
-          <button class="view-mode-btn" id="btn-mode-todos" onclick="setOperationalMode('todos')">
-            <i class="fa-solid fa-layer-group"></i>
-            <span>Todos os Registros</span>
-            <span class="mode-badge" id="mode-count-todos">0</span>
-          </button>
-        </div>
-
-        <div class="mode-status-info" id="mode-status-info">
-          <i class="fa-solid fa-circle-info"></i>
-          <span>Exibindo apenas veículos em doca e iscas aguardando devolução física.</span>
         </div>
       </section>
 
@@ -316,7 +295,123 @@
     </div>
 
     <!-- ==========================================
-         TAB 2: DASHBOARD ANALÍTICO C-LEVEL
+         TAB 2: HISTÓRICO DE BAIXAS & RETORNO DE ISCAS
+         ========================================== -->
+    <div id="view-historico" class="tab-view" style="display: none;">
+      
+      <!-- Top Executive Ribbon de Baixas -->
+      <section class="historico-top-ribbon">
+        <div class="hist-kpi-card">
+          <div class="hist-kpi-icon icon-success"><i class="fa-solid fa-clipboard-check"></i></div>
+          <div class="hist-kpi-info">
+            <span class="hist-kpi-label">TOTAL DE BAIXAS REALIZADAS</span>
+            <div class="hist-kpi-val-row">
+              <strong class="hist-kpi-val" id="hist-total-baixas">0</strong>
+              <span class="hist-kpi-tag" id="hist-unit-tag">CD São Paulo</span>
+            </div>
+            <span class="hist-kpi-sub">Veículos expedidos e arquivados da operação</span>
+          </div>
+        </div>
+
+        <div class="hist-kpi-card">
+          <div class="hist-kpi-icon icon-purple"><i class="fa-solid fa-calendar-check"></i></div>
+          <div class="hist-kpi-info">
+            <span class="hist-kpi-label">ÚLTIMA BAIXA REGISTRADA</span>
+            <div class="hist-kpi-val-row">
+              <strong class="hist-kpi-val-sub" id="hist-ultima-data">--/--/---- --:--</strong>
+            </div>
+            <span class="hist-kpi-sub" id="hist-ultima-info">Placa: - • Motorista: -</span>
+          </div>
+        </div>
+
+        <div class="hist-kpi-card">
+          <div class="hist-kpi-icon icon-blue"><i class="fa-solid fa-satellite-dish"></i></div>
+          <div class="hist-kpi-info">
+            <span class="hist-kpi-label">ISCAS 100% REGULARIZADAS</span>
+            <div class="hist-kpi-val-row">
+              <strong class="hist-kpi-val" id="hist-iscas-ok-count">0</strong>
+              <span class="hist-kpi-tag tag-success"><i class="fa-solid fa-circle-check"></i> Conformes</span>
+            </div>
+            <span class="hist-kpi-sub">Rastreadores devolvidos e conferidos na unidade</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Toolbar do Histórico -->
+      <section class="toolbar-section">
+        <div class="toolbar-left">
+          <div class="historico-heading-title">
+            <h2><i class="fa-solid fa-box-archive"></i> Histórico Permanente de Baixas</h2>
+            <span class="historico-heading-sub">Registro com data, hora e devolução de iscas para consulta e auditoria</span>
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <!-- Quick Search no Histórico -->
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="input-search-historico" placeholder="Buscar placa, motorista, rota ou data..." autocomplete="off">
+            <button id="btn-clear-search-historico" class="btn-clear" title="Limpar busca" style="display:none;">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Exportar Histórico -->
+          <button id="btn-export-historico" class="btn-secondary" title="Exportar histórico para Excel / CSV">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>Exportar Histórico</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Tabela do Histórico de Baixas -->
+      <section class="table-container-card">
+        <div class="table-header-meta">
+          <div class="meta-left">
+            <span class="table-results-count" id="historico-table-count">Mostrando 0 registros baixados</span>
+          </div>
+          <div class="meta-right">
+            <span class="table-unit-tag" id="historico-table-unit">CD São Paulo</span>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="grid-table" id="table-historico">
+            <thead>
+              <tr>
+                <th style="min-width: 185px;"><i class="fa-regular fa-calendar-check"></i> DATA DA BAIXA</th>
+                <th class="th-rota">ROTA</th>
+                <th class="th-motorista">MOTORISTA</th>
+                <th class="th-placa">PLACA</th>
+                <th class="th-doca">DOCA</th>
+                <th class="th-conferente">CONFERENTE</th>
+                <th class="th-inicio">INÍCIO</th>
+                <th class="th-fim">FIM</th>
+                <th class="th-tempo">TEMPO DOCA</th>
+                <th class="th-isca">ISCA / STATUS</th>
+                <th class="th-acoes" style="text-align: center;">AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-historico">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-footer-bar">
+          <div class="footer-left">
+            <span>Total no histórico: <strong id="hist-footer-count">0</strong> baixas registradas</span>
+          </div>
+          <div class="footer-right">
+            <span class="tip-text"><i class="fa-solid fa-rotate-left"></i> Se precisar desfazer alguma baixa, use o botão <strong>Reverter</strong> na linha correspondente.</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==========================================
+         TAB 3: DASHBOARD ANALÍTICO C-LEVEL
          ========================================== -->
     <div id="view-dashboard" class="tab-view" style="display: none;">
       
@@ -787,6 +882,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
