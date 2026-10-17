@@ -1480,46 +1480,76 @@ function renderDashboardCharts() {
   }
 }
 
-// Export to CSV / Excel
+// Export to Excel (.xlsx) Nativo
 function exportarExcel() {
   const scopedData = getScopedData();
-  if (scopedData.length === 0) {
-    alert("Não há dados para exportar.");
+  const items = scopedData.filter(r => !r.arquivado && r.retornoIsca !== 'OK');
+
+  if (items.length === 0) {
+    alert("Não há dados ativos na grade operacional para exportar.");
     return;
   }
 
-  const headers = ["UNIDADE", "ROTA", "MOTORISTA", "PLACA", "DOCA", "CONFERENTE", "INICIO", "FIM", "TEMPO_MIN", "ISCA", "RETORNO_ISCA", "STATUS_LIBERADA", "OBSERVACOES"];
-  const rows = scopedData.map(r => {
-    const tempoMin = r.inicio && r.fim ? calcDurationMinutes(r.inicio, r.fim) : '';
-    return [
-      `"${r.unidade || ''}"`,
-      `"${r.rota || ''}"`,
-      `"${r.motorista || ''}"`,
-      `"${r.placa || ''}"`,
-      `"${r.doca || ''}"`,
-      `"${r.conferente || ''}"`,
-      `"${r.inicio || ''}"`,
-      `"${r.fim || ''}"`,
-      `"${tempoMin}"`,
-      `"${r.isca || ''}"`,
-      `"${r.retornoIsca || ''}"`,
-      `"${r.placaLiberada ? 'LIBERADA' : 'NORMAL'}"`,
-      `"${(r.obs || '').replace(/"/g, '""')}"`
-    ].join(';');
-  });
-
-  const csvContent = "\uFEFF" + headers.join(';') + "\r\n" + rows.join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
   const dateStr = new Date().toISOString().slice(0, 10);
   const unitStr = state.activeUnidade.replace(/[^a-zA-Z0-9]/g, '_');
-  a.href = url;
-  a.download = `Controle_Docas_${unitStr}_${dateStr}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const fileName = `Controle_Docas_BBM_${unitStr}_${dateStr}`;
+
+  // Formatar dados para a planilha
+  const dataExport = items.map(r => {
+    const tempoMin = (r.inicio && r.fim) ? calcDurationMinutes(r.inicio, r.fim) : '';
+    return {
+      "Unidade": r.unidade || state.activeUnidade,
+      "Rota": r.rota || '',
+      "Motorista": r.motorista || '',
+      "Placa": r.placa || '',
+      "Doca": r.doca || '',
+      "Conferente": r.conferente || '',
+      "Início Operação": r.inicio || '',
+      "Término Operação": r.fim || 'Em Doca',
+      "Tempo em Doca (min)": tempoMin !== '' ? tempoMin : 'Em andamento',
+      "Código Isca": r.isca || 'S/ISCA',
+      "Retorno Isca": r.retornoIsca || 'PENDENTE',
+      "Status Placa": r.placaLiberada ? 'LIBERADA' : 'NORMAL',
+      "Observações": r.obs || ''
+    };
+  });
+
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    // Ajuste automático de largura de colunas
+    ws['!cols'] = [
+      { wch: 22 }, // Unidade
+      { wch: 8 },  // Rota
+      { wch: 34 }, // Motorista
+      { wch: 12 }, // Placa
+      { wch: 8 },  // Doca
+      { wch: 16 }, // Conferente
+      { wch: 16 }, // Início
+      { wch: 18 }, // Término
+      { wch: 22 }, // Tempo (min)
+      { wch: 14 }, // Isca
+      { wch: 16 }, // Retorno Isca
+      { wch: 14 }, // Status Placa
+      { wch: 28 }  // Observações
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Grade Operacional");
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
+  } else {
+    // Fallback CSV
+    const headers = Object.keys(dataExport[0]);
+    const rows = dataExport.map(row => headers.map(h => `"${String(row[h] || '').replace(/"/g, '""')}"`).join(';'));
+    const csvContent = "\uFEFF" + headers.join(';') + "\r\n" + rows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileName}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
 
 // Fullscreen TV Mode
@@ -1912,38 +1942,65 @@ function exportarHistoricoExcel() {
   }
 
   const hojeStr = new Date().toLocaleDateString('pt-BR');
-  const headers = ["DATA_BAIXA", "UNIDADE", "ROTA", "MOTORISTA", "PLACA", "DOCA", "CONFERENTE", "INICIO", "FIM", "TEMPO_TOTAL_MIN", "ISCA", "STATUS_RETORNO"];
-  const rows = baixas.map(r => {
-    const tempoMin = r.inicio && r.fim ? calcDurationMinutes(r.inicio, r.fim) : '';
-    const dataBaixa = r.dataHoraBaixa || `${hojeStr} às ${r.fim || '14:00'}`;
-    return [
-      `"${dataBaixa}"`,
-      `"${r.unidade || ''}"`,
-      `"${r.rota || ''}"`,
-      `"${r.motorista || ''}"`,
-      `"${r.placa || ''}"`,
-      `"${r.doca || ''}"`,
-      `"${r.conferente || ''}"`,
-      `"${r.inicio || ''}"`,
-      `"${r.fim || ''}"`,
-      `"${tempoMin}"`,
-      `"${r.isca || ''}"`,
-      `"CONCLUIDO/OK"`
-    ].join(';');
-  });
-
-  const csvContent = "\uFEFF" + headers.join(';') + "\r\n" + rows.join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
   const dateStr = new Date().toISOString().slice(0, 10);
   const unitStr = state.activeUnidade.replace(/[^a-zA-Z0-9]/g, '_');
-  a.href = url;
-  a.download = `Historico_Baixas_${unitStr}_${dateStr}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const fileName = `Historico_Baixas_BBM_${unitStr}_${dateStr}`;
+
+  const dataExport = baixas.map(r => {
+    const tempoMin = (r.inicio && r.fim) ? calcDurationMinutes(r.inicio, r.fim) : '';
+    const dataBaixa = r.dataHoraBaixa || `${hojeStr} às ${r.fim || '14:00'}`;
+    return {
+      "Data e Horário da Baixa": dataBaixa,
+      "Unidade": r.unidade || state.activeUnidade,
+      "Rota": r.rota || '',
+      "Motorista": r.motorista || '',
+      "Placa": r.placa || '',
+      "Doca": r.doca || '',
+      "Conferente": r.conferente || '',
+      "Início Operação": r.inicio || '',
+      "Término Operação": r.fim || '',
+      "Tempo Total em Doca (min)": tempoMin !== '' ? tempoMin : '-',
+      "Código Isca": r.isca || 'S/ISCA',
+      "Status Devolução Isca": "RETORNADA OK",
+      "Status do Registro": "BAIXA CONCLUÍDA"
+    };
+  });
+
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    ws['!cols'] = [
+      { wch: 24 }, // Data da Baixa
+      { wch: 22 }, // Unidade
+      { wch: 8 },  // Rota
+      { wch: 34 }, // Motorista
+      { wch: 12 }, // Placa
+      { wch: 8 },  // Doca
+      { wch: 16 }, // Conferente
+      { wch: 16 }, // Início
+      { wch: 18 }, // Término
+      { wch: 26 }, // Tempo Total em Doca (min)
+      { wch: 14 }, // Código Isca
+      { wch: 22 }, // Status Devolução
+      { wch: 20 }  // Status Registro
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Histórico de Baixas");
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
+  } else {
+    // Fallback CSV
+    const headers = Object.keys(dataExport[0]);
+    const rows = dataExport.map(row => headers.map(h => `"${String(row[h] || '').replace(/"/g, '""')}"`).join(';'));
+    const csvContent = "\uFEFF" + headers.join(';') + "\r\n" + rows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileName}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 }
 
 window.solicitarConfirmacaoIsca = function(id) {
