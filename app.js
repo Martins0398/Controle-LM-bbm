@@ -630,7 +630,7 @@ function renderKPIs() {
   document.getElementById('kpi-loading').textContent = emAndamento;
   document.getElementById('kpi-completed').textContent = concluidos;
   document.getElementById('kpi-iscas-pendentes').textContent = iscasPendentes;
-  document.getElementById('kpi-tempo-medio').textContent = `${mediaMin} min`;
+  document.getElementById('kpi-tempo-medio').textContent = formatDuration(mediaMin);
 
   // Pills counts
   document.getElementById('count-pill-todos').textContent = total;
@@ -775,7 +775,8 @@ function createTableRowHtml(record) {
     let speedClass = 'duration-normal';
     if (durationMin <= 30) speedClass = 'duration-fast';
     else if (durationMin > 60) speedClass = 'duration-slow';
-    durationBadge = `<span class="duration-badge ${speedClass}"><i class="fa-regular fa-clock"></i> ${durationMin} min</span>`;
+    const durationText = formatDuration(durationMin);
+    durationBadge = `<span class="duration-badge ${speedClass}" title="${durationMin} min no total"><i class="fa-regular fa-clock"></i> ${durationText}</span>`;
   } else {
     fimHtml = `<button class="btn-quick-end" onclick="finalizarOperacao('${record.id}')" title="Clique para encerrar com a hora atual"><i class="fa-solid fa-check"></i> Finalizar</button>`;
     durationBadge = `<span class="duration-badge duration-ongoing"><i class="fa-solid fa-spinner fa-spin"></i> Em doca</span>`;
@@ -847,6 +848,24 @@ function calcDurationMinutes(startStr, endStr) {
   let endMin = h2 * 60 + m2;
   if (endMin < startMin) endMin += 24 * 60;
   return endMin - startMin;
+}
+
+// Formata minutos em formato amigável: se >= 60 min, exibe horas e minutos (ex: 22h 27min, 1h 15min)
+function formatDuration(totalMinutes) {
+  if (totalMinutes === null || totalMinutes === undefined || totalMinutes === '' || isNaN(totalMinutes)) {
+    return '-';
+  }
+  const min = Math.round(Number(totalMinutes));
+  if (min <= 0) return '0 min';
+  if (min < 60) {
+    return `${min} min`;
+  }
+  const horas = Math.floor(min / 60);
+  const minutosRestantes = min % 60;
+  if (minutosRestantes === 0) {
+    return `${horas}h`;
+  }
+  return `${horas}h ${minutosRestantes}min`;
 }
 
 function escapeHtml(str) {
@@ -1487,7 +1506,7 @@ function renderDashboardCharts() {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: (item) => ` Tempo Total: ${item.raw} min`
+                label: (item) => ` Tempo Total: ${formatDuration(item.raw)} (${item.raw} min)`
               }
             }
           },
@@ -1527,8 +1546,8 @@ function renderDashboardCharts() {
                 <span class="ranking-meta-sub">Doca ${escapeHtml(p.doca)} • Rota ${escapeHtml(p.rota)} • ${escapeHtml(p.motorista.split(' ')[0])}</span>
               </div>
             </div>
-            <span class="ranking-time-badge ${timeClass}">
-              <i class="fa-regular fa-clock"></i> ${p.minutos} min
+            <span class="ranking-time-badge ${timeClass}" title="${p.minutos} min no total">
+              <i class="fa-regular fa-clock"></i> ${formatDuration(p.minutos)}
             </span>
           </div>
         `;
@@ -1563,7 +1582,8 @@ function exportarExcel() {
       "Conferente": r.conferente || '',
       "Início Operação": r.inicio || '',
       "Término Operação": r.fim || 'Em Doca',
-      "Tempo em Doca (min)": tempoMin !== '' ? tempoMin : 'Em andamento',
+      "Tempo em Doca": tempoMin !== '' ? formatDuration(tempoMin) : 'Em andamento',
+      "Tempo em Doca (minutos)": tempoMin !== '' ? tempoMin : '-',
       "Código Isca": r.isca || 'S/ISCA',
       "Retorno Isca": r.retornoIsca || 'PENDENTE',
       "Status Placa": r.placaLiberada ? 'LIBERADA' : 'NORMAL',
@@ -1989,7 +2009,8 @@ function renderHistoricoTable() {
 
   tbody.innerHTML = filtered.map(r => {
     const initials = getInitials(r.motorista);
-    const durationMin = (r.inicio && r.fim) ? calcDurationMinutes(r.inicio, r.fim) : '-';
+    const durationMin = (r.inicio && r.fim) ? calcDurationMinutes(r.inicio, r.fim) : null;
+    const durationText = durationMin !== null ? formatDuration(durationMin) : '-';
     const iscaCode = (r.isca || '').trim().toUpperCase();
     const isSemIsca = iscaCode === '' || iscaCode === 'S/ISCA';
     const iscaBadge = isSemIsca
@@ -2017,7 +2038,7 @@ function renderHistoricoTable() {
         <td class="td-inicio">${escapeHtml(r.inicio || '-')}</td>
         <td class="td-fim">${escapeHtml(r.fim || '-')}</td>
         <td class="td-tempo">
-          <span class="duration-badge duration-fast"><i class="fa-regular fa-clock"></i> ${durationMin} min</span>
+          <span class="duration-badge duration-fast" title="${durationMin !== null ? durationMin + ' min no total' : '-'}"><i class="fa-regular fa-clock"></i> ${durationText}</span>
         </td>
         <td class="td-isca">${iscaBadge}</td>
         <td class="td-acoes" style="text-align: center;">
@@ -2057,7 +2078,8 @@ function exportarHistoricoExcel() {
       "Conferente": r.conferente || '',
       "Início Operação": r.inicio || '',
       "Término Operação": r.fim || '',
-      "Tempo Total em Doca (min)": tempoMin !== '' ? tempoMin : '-',
+      "Tempo Total em Doca": tempoMin !== '' ? formatDuration(tempoMin) : '-',
+      "Tempo Total em Doca (minutos)": tempoMin !== '' ? tempoMin : '-',
       "Código Isca": r.isca || 'S/ISCA',
       "Status Devolução Isca": "RETORNADA OK",
       "Status do Registro": "BAIXA CONCLUÍDA"
