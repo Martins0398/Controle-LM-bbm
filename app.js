@@ -482,7 +482,10 @@ function toggleTheme() {
 
 function updateThemeIcon(theme) {
   const btn = document.getElementById('btn-toggle-theme');
-  btn.innerHTML = theme === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+  if (btn) {
+    btn.innerHTML = theme === 'dark' ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+    if (window.lucide) lucide.createIcons();
+  }
 }
 
 // Tab Switching
@@ -511,6 +514,7 @@ window.alternarAba = function(tabName) {
   } else if (tabName === 'dashboard') {
     renderDashboardCharts();
   }
+  if (window.lucide) lucide.createIcons();
 };
 
 // Populate Unit Selectors
@@ -593,6 +597,9 @@ function renderApp() {
     renderHistoricoTable();
   } else {
     renderDashboardCharts();
+  }
+  if (window.lucide) {
+    lucide.createIcons();
   }
 }
 
@@ -749,11 +756,13 @@ function renderTable() {
   if (items.length === 0) {
     tbody.innerHTML = '';
     emptyState.style.display = 'block';
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
   emptyState.style.display = 'none';
   tbody.innerHTML = items.map(record => createTableRowHtml(record)).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 // Helper: Create HTML for a row
@@ -776,10 +785,10 @@ function createTableRowHtml(record) {
     if (durationMin <= 30) speedClass = 'duration-fast';
     else if (durationMin > 60) speedClass = 'duration-slow';
     const durationText = formatDuration(durationMin);
-    durationBadge = `<span class="duration-badge ${speedClass}" title="${durationMin} min no total"><i class="fa-regular fa-clock"></i> ${durationText}</span>`;
+    durationBadge = `<span class="duration-badge ${speedClass}" title="${durationMin} min no total"><i data-lucide="clock"></i> ${durationText}</span>`;
   } else {
-    fimHtml = `<button class="btn-quick-end" onclick="finalizarOperacao('${record.id}')" title="Clique para encerrar com a hora atual"><i class="fa-solid fa-check"></i> Finalizar</button>`;
-    durationBadge = `<span class="duration-badge duration-ongoing"><i class="fa-solid fa-spinner fa-spin"></i> Em doca</span>`;
+    fimHtml = `<button class="btn-quick-end" onclick="finalizarOperacao('${record.id}')" title="Clique para encerrar com a hora atual"><i data-lucide="check"></i> Finalizar</button>`;
+    durationBadge = `<span class="duration-badge duration-ongoing"><i data-lucide="loader" class="animate-spin inline-block"></i> Em doca</span>`;
   }
 
   const iscaRaw = (record.isca || '').trim().toUpperCase();
@@ -790,7 +799,7 @@ function createTableRowHtml(record) {
   if (isSemIsca) {
     retornoBtnHtml = `<span class="retorno-btn-toggle status-sem-isca" title="Não aplicável">-</span>`;
   } else {
-    retornoBtnHtml = `<button class="retorno-btn-toggle status-pendente" onclick="solicitarConfirmacaoIsca('${record.id}')" title="Pendente de retorno! Clique para confirmar e transferir para o Histórico de Baixas"><i class="fa-solid fa-triangle-exclamation"></i> PENDENTE</button>`;
+    retornoBtnHtml = `<button class="retorno-btn-toggle status-pendente" onclick="solicitarConfirmacaoIsca('${record.id}')" title="Pendente de retorno! Clique para confirmar e transferir para o Histórico de Baixas"><i data-lucide="alert-triangle"></i> PENDENTE</button>`;
   }
 
   const unitBadge = state.activeUnidade === 'todas' ? `<span style="font-size:0.7rem; color:var(--text-muted); display:block;">(${record.unidade})</span>` : '';
@@ -819,10 +828,10 @@ function createTableRowHtml(record) {
       <td class="td-acoes">
         <div class="action-btns-wrap">
           <button class="btn-table-action" onclick="editarRegistro('${record.id}')" title="Editar Operação">
-            <i class="fa-regular fa-pen-to-square"></i>
+            <i data-lucide="edit-3"></i>
           </button>
           <button class="btn-table-action btn-del" onclick="removerRegistro('${record.id}')" title="Excluir Registro">
-            <i class="fa-regular fa-trash-can"></i>
+            <i data-lucide="trash-2"></i>
           </button>
         </div>
       </td>
@@ -1032,12 +1041,14 @@ function fecharModalUnidades() {
 
 function renderListaUnidades() {
   const ul = document.getElementById('lista-unidades-cadastradas');
+  if (!ul) return;
   ul.innerHTML = state.unidades.map(u => `
     <li class="unit-manage-item">
-      <span><i class="fa-solid fa-location-dot" style="color:#2563eb; margin-right:8px;"></i>${escapeHtml(u)}</span>
-      ${state.unidades.length > 1 ? `<button class="btn-del-unit" onclick="excluirUnidade('${escapeHtml(u)}')"><i class="fa-regular fa-trash-can"></i></button>` : ''}
+      <span><i data-lucide="map-pin" style="color:#2563eb; margin-right:8px; display:inline-block; vertical-align:middle;"></i>${escapeHtml(u)}</span>
+      ${state.unidades.length > 1 ? `<button class="btn-del-unit" onclick="excluirUnidade('${escapeHtml(u)}')"><i data-lucide="trash-2"></i></button>` : ''}
     </li>
   `).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 window.excluirUnidade = function(unitName) {
@@ -1547,13 +1558,14 @@ function renderDashboardCharts() {
               </div>
             </div>
             <span class="ranking-time-badge ${timeClass}" title="${p.minutos} min no total">
-              <i class="fa-regular fa-clock"></i> ${formatDuration(p.minutos)}
+              <i data-lucide="clock"></i> ${formatDuration(p.minutos)}
             </span>
           </div>
         `;
       }).join('');
     }
   }
+  if (window.lucide) lucide.createIcons();
 }
 
 // Export to Excel (.xlsx) Nativo
@@ -1845,7 +1857,7 @@ async function carregarListaUsuarios() {
       const actionBtn = isSelf 
         ? `<span style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;">(Você)</span>`
         : `<button type="button" class="btn-table-action delete" onclick="excluirUsuario('${u.id}', '${u.matricula}')" title="Excluir Login ${u.matricula}" style="color:#ef4444; border:none; background:transparent; cursor:pointer; font-size:0.9rem;">
-             <i class="fa-solid fa-trash-can"></i>
+             <i data-lucide="trash-2"></i>
            </button>`;
 
       return `
@@ -1858,6 +1870,7 @@ async function carregarListaUsuarios() {
         </tr>
       `;
     }).join('');
+    if (window.lucide) lucide.createIcons();
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 12px;">Erro ao carregar usuários ou permissão negada.</td></tr>`;
   }
@@ -1880,7 +1893,8 @@ async function cadastrarNovoUsuario(e) {
 
   const btn = document.getElementById('btn-save-new-user');
   btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Criando login...`;
+  btn.innerHTML = `<i data-lucide="loader" class="animate-spin inline-block mr-1"></i> Criando login...`;
+  if (window.lucide) lucide.createIcons();
 
   try {
     const res = await fetch('/api/admin/users', {
@@ -1901,7 +1915,8 @@ async function cadastrarNovoUsuario(e) {
     alert("Erro na conexão com o servidor.");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-user-plus"></i> Criar Novo Login`;
+    btn.innerHTML = `<i data-lucide="user-plus"></i> Criar Novo Login`;
+    if (window.lucide) lucide.createIcons();
   }
 }
 
@@ -1997,13 +2012,14 @@ function renderHistoricoTable() {
       <tr>
         <td colspan="11">
           <div class="empty-history-notice">
-            <i class="fa-solid fa-box-open"></i>
+            <i data-lucide="package-open"></i>
             <p><strong>Nenhuma baixa encontrada ${searchTerm ? 'para a busca informada' : 'nesta unidade'}.</strong></p>
             <span style="font-size:0.8rem; color:var(--text-muted);">As viagens finalizadas com confirmação de isca serão arquivadas e listadas aqui permanentemente com data e hora.</span>
           </div>
         </td>
       </tr>
     `;
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
@@ -2015,13 +2031,13 @@ function renderHistoricoTable() {
     const isSemIsca = iscaCode === '' || iscaCode === 'S/ISCA';
     const iscaBadge = isSemIsca
       ? `<span class="isca-none">S/ISCA</span>`
-      : `<span style="font-family:monospace; font-weight:bold; color:#10b981;"><i class="fa-solid fa-satellite-dish"></i> #${escapeHtml(r.isca)}</span> <span class="retorno-btn-toggle status-ok" style="padding:2px 6px; font-size:0.7rem; pointer-events:none;"><i class="fa-solid fa-check"></i> RETORNADA</span>`;
+      : `<span style="font-family:monospace; font-weight:bold; color:#10b981;"><i data-lucide="radio" class="inline-block mr-1"></i> #${escapeHtml(r.isca)}</span> <span class="retorno-btn-toggle status-ok" style="padding:2px 6px; font-size:0.7rem; pointer-events:none;"><i data-lucide="check" class="inline-block mr-1"></i> RETORNADA</span>`;
 
     return `
       <tr>
         <td>
           <span class="badge-data-baixa">
-            <i class="fa-regular fa-calendar-check"></i>
+            <i data-lucide="calendar"></i>
             ${escapeHtml(r.dataHoraBaixa || `${hojeStr} às 14:00`)}
           </span>
         </td>
@@ -2038,17 +2054,18 @@ function renderHistoricoTable() {
         <td class="td-inicio">${escapeHtml(r.inicio || '-')}</td>
         <td class="td-fim">${escapeHtml(r.fim || '-')}</td>
         <td class="td-tempo">
-          <span class="duration-badge duration-fast" title="${durationMin !== null ? durationMin + ' min no total' : '-'}"><i class="fa-regular fa-clock"></i> ${durationText}</span>
+          <span class="duration-badge duration-fast" title="${durationMin !== null ? durationMin + ' min no total' : '-'}"><i data-lucide="clock"></i> ${durationText}</span>
         </td>
         <td class="td-isca">${iscaBadge}</td>
         <td class="td-acoes" style="text-align: center;">
           <button class="btn-reverter-baixa" onclick="reverterBaixaIsca('${r.id}')" title="Restaurar para a Grade Operacional Ativa">
-            <i class="fa-solid fa-arrow-rotate-left"></i> Reverter
+            <i data-lucide="rotate-ccw"></i> Reverter
           </button>
         </td>
       </tr>
     `;
   }).join('');
+  if (window.lucide) lucide.createIcons();
 }
 
 function exportarHistoricoExcel() {

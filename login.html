@@ -10,7 +10,32 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   
-  <!-- FontAwesome Icons -->
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: '#27272a',
+            input: '#27272a',
+            ring: '#f95738',
+            background: '#09090b',
+            foreground: '#fafafa',
+            card: '#18181b',
+            primary: {
+              DEFAULT: '#f95738',
+              foreground: '#ffffff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- FontAwesome Fallback (Compatibilidade) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <!-- Login Stylesheet -->
@@ -44,7 +69,7 @@
           <!-- Destaques Operacionais -->
           <div class="brand-highlights">
             <div class="highlight-item">
-              <div class="hl-icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
+              <div class="hl-icon"><i data-lucide="truck"></i></div>
               <div class="hl-text">
                 <strong>Giro de Docas em Tempo Real</strong>
                 <span>Acompanhamento de início e término por rota</span>
@@ -52,7 +77,7 @@
             </div>
             
             <div class="highlight-item">
-              <div class="hl-icon"><i class="fa-solid fa-shield-halved"></i></div>
+              <div class="hl-icon"><i data-lucide="shield-check"></i></div>
               <div class="hl-text">
                 <strong>Gestão Rigorosa de Iscas & PGR</strong>
                 <span>Controle preventivo de devolução e liberação</span>
@@ -60,7 +85,7 @@
             </div>
 
             <div class="highlight-item">
-              <div class="hl-icon"><i class="fa-solid fa-chart-line"></i></div>
+              <div class="hl-icon"><i data-lucide="trending-up"></i></div>
               <div class="hl-text">
                 <strong>Dashboard Executivo C-Level</strong>
                 <span>Métricas de produtividade e capacidade das unidades</span>
@@ -79,7 +104,7 @@
       <div class="login-form-panel">
         <div class="form-panel-header">
           <div class="security-badge">
-            <i class="fa-solid fa-lock"></i>
+            <i data-lucide="lock" style="width:13px; height:13px;"></i>
             <span>Ambiente Seguro • SSL 256-bit</span>
           </div>
           <h2 class="form-title">Acesso ao Sistema</h2>
@@ -88,7 +113,7 @@
 
         <!-- Alerta de Erro / Sucesso -->
         <div id="auth-alert" class="auth-alert" style="display: none;">
-          <div class="alert-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <div class="alert-icon"><i data-lucide="alert-circle"></i></div>
           <div class="alert-text" id="auth-alert-msg">Mensagem de erro</div>
         </div>
 
@@ -99,7 +124,7 @@
           <div class="form-group">
             <label for="input-identifier">Login, Matrícula ou E-mail</label>
             <div class="input-wrapper">
-              <i class="fa-solid fa-id-badge input-icon"></i>
+              <i data-lucide="user" class="input-icon" style="width:16px; height:16px;"></i>
               <input 
                 type="text" 
                 id="input-identifier" 
@@ -117,7 +142,7 @@
               <a href="#" id="link-forgot-password" class="forgot-link">Esqueci minha senha</a>
             </div>
             <div class="input-wrapper">
-              <i class="fa-solid fa-key input-icon"></i>
+              <i data-lucide="key-round" class="input-icon" style="width:16px; height:16px;"></i>
               <input 
                 type="password" 
                 id="input-password" 
@@ -125,7 +150,7 @@
                 required
               >
               <button type="button" id="btn-toggle-password" class="btn-pwd-toggle" title="Mostrar/Ocultar Senha">
-                <i class="fa-solid fa-eye" id="pwd-icon"></i>
+                <i data-lucide="eye" id="pwd-icon" style="width:16px; height:16px;"></i>
               </button>
             </div>
           </div>
@@ -142,7 +167,7 @@
           <!-- Botão de Entrar -->
           <button type="submit" id="btn-submit" class="btn-login-submit">
             <span class="btn-text">Entrar no Sistema</span>
-            <i class="fa-solid fa-arrow-right btn-arrow"></i>
+            <i data-lucide="arrow-right" class="btn-arrow" style="width:18px; height:18px;"></i>
             <div class="btn-spinner" id="btn-spinner" style="display: none;"></div>
           </button>
         </form>
@@ -155,7 +180,7 @@
           
           <div class="demo-buttons-grid">
             <button type="button" class="btn-demo-profile" data-role="dialogo">
-              <div class="demo-profile-icon"><i class="fa-solid fa-user-shield"></i></div>
+              <div class="demo-profile-icon"><i data-lucide="shield-check"></i></div>
               <div class="demo-profile-info">
                 <strong>Master (Diálogo)</strong>
                 <span>Login: Dialogo • Todas Unidades</span>
@@ -163,7 +188,7 @@
             </button>
 
             <button type="button" class="btn-demo-profile" data-role="brasilia">
-              <div class="demo-profile-icon"><i class="fa-solid fa-location-dot"></i></div>
+              <div class="demo-profile-icon"><i data-lucide="map-pin"></i></div>
               <div class="demo-profile-info">
                 <strong>Unidade Brasília</strong>
                 <span>Login: Brasilia • Acesso Exclusivo</span>
@@ -174,7 +199,7 @@
 
         <!-- Rodapé do Formulário -->
         <div class="login-legal-footer">
-          <p><i class="fa-solid fa-circle-info"></i> Acesso restrito a colaboradores autorizados da BBM Logística.</p>
+          <p><i data-lucide="info" style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-right:4px;"></i> Acesso restrito a colaboradores autorizados da BBM Logística.</p>
         </div>
 
       </div>
@@ -187,7 +212,7 @@
     <div class="login-modal-card">
       <div class="login-modal-header">
         <div class="modal-title-box">
-          <i class="fa-solid fa-key"></i>
+          <i data-lucide="key-round"></i>
           <h3>Recuperação de Acesso</h3>
         </div>
         <button type="button" id="btn-close-forgot" class="btn-close-modal">&times;</button>
@@ -196,14 +221,14 @@
         <p>Por políticas de segurança da <strong>BBM Logística</strong>, a redefinição de credenciais requer validação junto ao Service Desk ou Supervisor de Unidade.</p>
         <div class="support-channels">
           <div class="channel-item">
-            <i class="fa-solid fa-headset"></i>
+            <i data-lucide="headphones"></i>
             <div>
               <strong>Service Desk TI:</strong>
               <span>Ramal 4004 ou ti.suporte@bbmlogistica.com.br</span>
             </div>
           </div>
           <div class="channel-item">
-            <i class="fa-solid fa-clock"></i>
+            <i data-lucide="clock"></i>
             <div>
               <strong>Horário de Atendimento:</strong>
               <span>24/7 para Centros de Distribuição e Docas</span>
@@ -219,5 +244,10 @@
 
   <!-- Script do Login -->
   <script src="login.js"></script>
+  <script>
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
 </body>
 </html>

@@ -119,6 +119,53 @@ button, input, select, textarea {
 }
 
 /* ============================================================
+   LUCIDE ICONS & SHADCN/UI MICRO-FINISH
+   ============================================================ */
+svg.lucide, i[data-lucide] {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke-width: 1.85px;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.modal-icon svg.lucide, .modal-icon[data-lucide] {
+  width: 1.6rem;
+  height: 1.6rem;
+  stroke-width: 2px;
+}
+
+.empty-icon svg.lucide, .empty-icon[data-lucide] {
+  width: 3.5rem;
+  height: 3.5rem;
+  stroke-width: 1.5px;
+  margin-bottom: 0.75rem;
+  color: var(--text-muted);
+}
+
+.kpi-icon svg.lucide, .hist-kpi-icon svg.lucide, .dash-kpi-icon svg.lucide {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke-width: 2px;
+}
+
+/* shadcn-like focus rings & button transitions */
+button, input, select, textarea {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+}
+
+.btn-primary:active, .btn-secondary:active, .btn-table-action:active {
+  transform: scale(0.98);
+}
+
+/* ============================================================
    CORPORATE HEADER & EXACT LOGO
    ============================================================ */
 .corp-header {

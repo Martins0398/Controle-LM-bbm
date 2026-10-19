@@ -8,8 +8,35 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- FontAwesome Icons -->
+  
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: '#27272a',
+            input: '#27272a',
+            ring: '#f95738',
+            background: '#09090b',
+            foreground: '#fafafa',
+            card: '#18181b',
+            primary: {
+              DEFAULT: '#f95738',
+              foreground: '#ffffff'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Fallback (Compatibilidade) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
   <!-- Chart.js for Dashboard Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Native Excel (.xlsx) Export -->
@@ -41,7 +68,7 @@
       <div class="header-center-controls">
         <div class="unit-selector-wrapper">
           <label for="select-unidade" class="unit-label" title="Unidade Operacional">
-            <i class="fa-solid fa-warehouse"></i>
+            <i data-lucide="warehouse"></i>
           </label>
           <div class="custom-select-container">
             <select id="select-unidade" class="unit-select" title="Selecione a Unidade Operacional">
@@ -53,17 +80,17 @@
               <option value="CD Porto Alegre">📍 CD Porto Alegre (RS)</option>
             </select>
             <button id="btn-gerenciar-unidades" class="btn-icon-addon" onclick="abrirModalUnidades()" title="Gerenciar / Adicionar Unidades">
-              <i class="fa-solid fa-plus"></i>
+              <i data-lucide="plus"></i>
             </button>
           </div>
         </div>
 
         <div class="header-tool-buttons">
           <button id="btn-toggle-theme" class="btn-tool" title="Alternar Modo Escuro / Claro">
-            <i class="fa-solid fa-moon"></i>
+            <i data-lucide="moon" id="theme-lucide-icon"></i>
           </button>
           <button id="btn-fullscreen" class="btn-tool" title="Modo Telão / TV de Doca">
-            <i class="fa-solid fa-expand"></i>
+            <i data-lucide="maximize-2"></i>
           </button>
         </div>
       </div>
@@ -72,16 +99,16 @@
       <div class="header-clock-far-right">
         <!-- User Session Indicator -->
         <div class="header-user-card" id="header-user-card">
-          <div class="user-avatar" id="user-avatar" title="Perfil"><i class="fa-solid fa-user-shield"></i></div>
+          <div class="user-avatar" id="user-avatar" title="Perfil"><i data-lucide="shield"></i></div>
           <div class="user-text-info">
             <span class="user-name" id="user-display-name">Carregando...</span>
             <span class="user-role-badge" id="user-display-role">Operador</span>
           </div>
           <button id="btn-admin-users" class="btn-user-action" title="Gerenciar Usuários (Admin)" style="display: none;">
-            <i class="fa-solid fa-users-gear"></i>
+            <i data-lucide="users"></i>
           </button>
           <button id="btn-logout" class="btn-user-action logout" title="Encerrar Sessão">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <i data-lucide="log-out"></i>
           </button>
         </div>
 
@@ -98,16 +125,16 @@
       <div class="sub-nav-inner">
         <div class="tabs-group">
           <button class="nav-tab-btn active" id="tab-btn-docas" onclick="alternarAba('docas')">
-            <i class="fa-solid fa-table-list"></i>
+            <i data-lucide="layout-grid"></i>
             <span>Controle de Docas</span>
           </button>
           <button class="nav-tab-btn" id="tab-btn-historico" onclick="alternarAba('historico')">
-            <i class="fa-solid fa-box-archive"></i>
+            <i data-lucide="archive"></i>
             <span>Histórico de Baixas</span>
             <span class="tab-badge-count" id="badge-historico-count">0</span>
           </button>
           <button class="nav-tab-btn" id="tab-btn-dashboard" onclick="alternarAba('dashboard')">
-            <i class="fa-solid fa-chart-pie"></i>
+            <i data-lucide="bar-chart-3"></i>
             <span>Dashboard Operacional</span>
             <span class="tab-badge-new">Analytics</span>
           </button>
@@ -132,7 +159,7 @@
       <!-- KPI Summary Cards -->
       <section class="kpi-grid">
         <div class="kpi-card total-card">
-          <div class="kpi-icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
+          <div class="kpi-icon"><i data-lucide="truck"></i></div>
           <div class="kpi-data">
             <span class="kpi-title">TOTAL DE VEÍCULOS / ROTAS</span>
             <div class="kpi-value-row">
@@ -143,7 +170,7 @@
         </div>
 
         <div class="kpi-card loading-card">
-          <div class="kpi-icon"><i class="fa-solid fa-dolly"></i></div>
+          <div class="kpi-icon"><i data-lucide="clock"></i></div>
           <div class="kpi-data">
             <span class="kpi-title">EM CARREGAMENTO / NA DOCA</span>
             <div class="kpi-value-row">
@@ -154,7 +181,7 @@
         </div>
 
         <div class="kpi-card completed-card">
-          <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="kpi-icon"><i data-lucide="check-circle-2"></i></div>
           <div class="kpi-data">
             <span class="kpi-title">FINALIZADOS / EXPEDIDOS</span>
             <div class="kpi-value-row">
@@ -165,7 +192,7 @@
         </div>
 
         <div class="kpi-card iscas-card">
-          <div class="kpi-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+          <div class="kpi-icon"><i data-lucide="radio"></i></div>
           <div class="kpi-data">
             <span class="kpi-title">ISCAS PENDENTES RETORNO</span>
             <div class="kpi-value-row">
@@ -176,7 +203,7 @@
         </div>
 
         <div class="kpi-card avgtime-card">
-          <div class="kpi-icon"><i class="fa-solid fa-stopwatch"></i></div>
+          <div class="kpi-icon"><i data-lucide="timer"></i></div>
           <div class="kpi-data">
             <span class="kpi-title">TEMPO MÉDIO DE DOCA</span>
             <div class="kpi-value-row">
@@ -191,7 +218,7 @@
       <section class="toolbar-section">
         <div class="toolbar-left">
           <button id="btn-novo-registro" class="btn-primary" onclick="abrirModalRegistro()">
-            <i class="fa-solid fa-plus-circle"></i>
+            <i data-lucide="plus-circle"></i>
             <span>Novo Carregamento</span>
           </button>
 
@@ -207,10 +234,10 @@
         <div class="toolbar-right">
           <!-- Quick Search -->
           <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <i data-lucide="search" class="search-icon"></i>
             <input type="text" id="input-search" placeholder="Buscar motorista, placa, rota, doca..." autocomplete="off">
             <button id="btn-clear-search" class="btn-clear" title="Limpar busca" style="display:none;">
-              <i class="fa-solid fa-xmark"></i>
+              <i data-lucide="x"></i>
             </button>
           </div>
 
@@ -222,15 +249,15 @@
           <!-- Export & Print Actions -->
           <div class="action-dropdown">
             <button id="btn-export-excel" class="btn-secondary" title="Exportar tabela para Excel / CSV">
-              <i class="fa-solid fa-file-excel"></i>
+              <i data-lucide="file-spreadsheet"></i>
               <span>Exportar</span>
             </button>
             <button id="btn-print-table" class="btn-secondary" title="Imprimir Relatório Operacional">
-              <i class="fa-solid fa-print"></i>
+              <i data-lucide="printer"></i>
               <span>Imprimir</span>
             </button>
             <button id="btn-reset-demo" class="btn-ghost" title="Restaurar dados de exemplo da imagem">
-              <i class="fa-solid fa-rotate-left"></i>
+              <i data-lucide="rotate-cw"></i>
             </button>
           </div>
         </div>
@@ -275,11 +302,11 @@
 
         <!-- Table Empty State -->
         <div id="table-empty-state" class="empty-state" style="display: none;">
-          <i class="fa-solid fa-truck-moving empty-icon"></i>
+          <i data-lucide="truck" class="empty-icon"></i>
           <h3>Nenhum carregamento encontrado</h3>
           <p>Não há registros correspondentes aos filtros selecionados para esta unidade.</p>
           <button class="btn-primary" onclick="abrirModalRegistro()">
-            <i class="fa-solid fa-plus"></i> Inserir Carregamento
+            <i data-lucide="plus"></i> Inserir Carregamento
           </button>
         </div>
 
@@ -289,7 +316,7 @@
             <span>Mostrando <strong id="footer-count-visible">0</strong> de <strong id="footer-count-total">0</strong> operações</span>
           </div>
           <div class="footer-right">
-            <span class="tip-text"><i class="fa-regular fa-lightbulb"></i> Clique no botão de <strong>Retorno Isca</strong> para alternar status rapidamente.</span>
+            <span class="tip-text"><i data-lucide="lightbulb"></i> Clique no botão de <strong>Retorno Isca</strong> para alternar status rapidamente.</span>
           </div>
         </div>
       </section>
@@ -304,7 +331,7 @@
       <!-- Top Executive Ribbon de Baixas -->
       <section class="historico-top-ribbon">
         <div class="hist-kpi-card">
-          <div class="hist-kpi-icon icon-success"><i class="fa-solid fa-clipboard-check"></i></div>
+          <div class="hist-kpi-icon icon-success"><i data-lucide="clipboard-check"></i></div>
           <div class="hist-kpi-info">
             <span class="hist-kpi-label">TOTAL DE BAIXAS REALIZADAS</span>
             <div class="hist-kpi-val-row">
@@ -316,7 +343,7 @@
         </div>
 
         <div class="hist-kpi-card">
-          <div class="hist-kpi-icon icon-purple"><i class="fa-solid fa-calendar-check"></i></div>
+          <div class="hist-kpi-icon icon-purple"><i data-lucide="calendar-check"></i></div>
           <div class="hist-kpi-info">
             <span class="hist-kpi-label">ÚLTIMA BAIXA REGISTRADA</span>
             <div class="hist-kpi-val-row">
@@ -327,12 +354,12 @@
         </div>
 
         <div class="hist-kpi-card">
-          <div class="hist-kpi-icon icon-blue"><i class="fa-solid fa-satellite-dish"></i></div>
+          <div class="hist-kpi-icon icon-blue"><i data-lucide="radio"></i></div>
           <div class="hist-kpi-info">
             <span class="hist-kpi-label">ISCAS 100% REGULARIZADAS</span>
             <div class="hist-kpi-val-row">
               <strong class="hist-kpi-val" id="hist-iscas-ok-count">0</strong>
-              <span class="hist-kpi-tag tag-success"><i class="fa-solid fa-circle-check"></i> Conformes</span>
+              <span class="hist-kpi-tag tag-success"><i data-lucide="check-circle-2"></i> Conformes</span>
             </div>
             <span class="hist-kpi-sub">Rastreadores devolvidos e conferidos na unidade</span>
           </div>
@@ -343,7 +370,7 @@
       <section class="toolbar-section">
         <div class="toolbar-left">
           <div class="historico-heading-title">
-            <h2><i class="fa-solid fa-box-archive"></i> Histórico Permanente de Baixas</h2>
+            <h2><i data-lucide="archive"></i> Histórico Permanente de Baixas</h2>
             <span class="historico-heading-sub">Registro com data, hora e devolução de iscas para consulta e auditoria</span>
           </div>
         </div>
@@ -351,16 +378,16 @@
         <div class="toolbar-right">
           <!-- Quick Search no Histórico -->
           <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <i data-lucide="search" class="search-icon"></i>
             <input type="text" id="input-search-historico" placeholder="Buscar placa, motorista, rota ou data..." autocomplete="off">
             <button id="btn-clear-search-historico" class="btn-clear" title="Limpar busca" style="display:none;">
-              <i class="fa-solid fa-xmark"></i>
+              <i data-lucide="x"></i>
             </button>
           </div>
 
           <!-- Exportar Histórico -->
           <button id="btn-export-historico" class="btn-secondary" title="Exportar histórico para Excel / CSV">
-            <i class="fa-solid fa-file-excel"></i>
+            <i data-lucide="file-spreadsheet"></i>
             <span>Exportar Histórico</span>
           </button>
         </div>
@@ -381,7 +408,7 @@
           <table class="grid-table" id="table-historico">
             <thead>
               <tr>
-                <th style="min-width: 185px;"><i class="fa-regular fa-calendar-check"></i> DATA DA BAIXA</th>
+                <th style="min-width: 185px;"><i data-lucide="calendar"></i> DATA DA BAIXA</th>
                 <th class="th-rota">ROTA</th>
                 <th class="th-motorista">MOTORISTA</th>
                 <th class="th-placa">PLACA</th>
@@ -405,7 +432,7 @@
             <span>Total no histórico: <strong id="hist-footer-count">0</strong> baixas registradas</span>
           </div>
           <div class="footer-right">
-            <span class="tip-text"><i class="fa-solid fa-rotate-left"></i> Se precisar desfazer alguma baixa, use o botão <strong>Reverter</strong> na linha correspondente.</span>
+            <span class="tip-text"><i data-lucide="undo-2"></i> Se precisar desfazer alguma baixa, use o botão <strong>Reverter</strong> na linha correspondente.</span>
           </div>
         </div>
       </section>
@@ -420,7 +447,7 @@
       <!-- Top Executive KPI Ribbon: Tempo Médio & Gargalos -->
       <section class="dash-kpi-ribbon">
         <div class="dash-kpi-card">
-          <div class="dash-kpi-icon icon-blue"><i class="fa-solid fa-stopwatch"></i></div>
+          <div class="dash-kpi-icon icon-blue"><i data-lucide="timer"></i></div>
           <div class="dash-kpi-content">
             <span class="dash-kpi-title">Tempo Médio em Doca</span>
             <div class="dash-kpi-val-row">
@@ -432,7 +459,7 @@
         </div>
 
         <div class="dash-kpi-card">
-          <div class="dash-kpi-icon icon-warn"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div class="dash-kpi-icon icon-warn"><i data-lucide="hourglass"></i></div>
           <div class="dash-kpi-content">
             <span class="dash-kpi-title">Maior Tempo Registrado</span>
             <div class="dash-kpi-val-row">
@@ -444,7 +471,7 @@
         </div>
 
         <div class="dash-kpi-card">
-          <div class="dash-kpi-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="dash-kpi-icon icon-green"><i data-lucide="check-circle-2"></i></div>
           <div class="dash-kpi-content">
             <span class="dash-kpi-title">Eficiência de SLA (≤ 45 min)</span>
             <div class="dash-kpi-val-row">
@@ -456,7 +483,7 @@
         </div>
 
         <div class="dash-kpi-card">
-          <div class="dash-kpi-icon icon-purple"><i class="fa-solid fa-truck-ramp-box"></i></div>
+          <div class="dash-kpi-icon icon-purple"><i data-lucide="truck"></i></div>
           <div class="dash-kpi-content">
             <span class="dash-kpi-title">Giro Operacional do Turno</span>
             <div class="dash-kpi-val-row">
@@ -473,7 +500,7 @@
         <div class="chart-card chart-card-wide" id="card-ranking-demora">
           <div class="chart-card-header">
             <div class="chart-title-group">
-              <h3 id="title-chart-ranking"><i class="fa-solid fa-clock-rotate-left text-danger"></i> Ranking de Permanência: Placas que Mais Demoraram no Carregamento</h3>
+              <h3 id="title-chart-ranking"><i data-lucide="history" class="text-danger inline-block mr-1"></i> Ranking de Permanência: Placas que Mais Demoraram no Carregamento</h3>
               <span class="chart-subtitle" id="subtitle-chart-ranking">Veículos com maior tempo total em doca (Início ao Fim) — Foco em redução de ociosidade</span>
             </div>
             <span class="chart-badge badge-danger">Gargalos Operacionais</span>
@@ -483,7 +510,7 @@
               <canvas id="chart-top-demora" style="max-height: 270px;"></canvas>
             </div>
             <div class="dash-ranking-list-col">
-              <div class="ranking-list-title"><i class="fa-solid fa-ranking-star"></i> Top Placas Mais Críticas</div>
+              <div class="ranking-list-title"><i data-lucide="trending-up"></i> Top Placas Mais Críticas</div>
               <div class="ranking-items-list" id="ranking-plates-list">
                 <!-- Dynamically populated -->
               </div>
@@ -499,7 +526,7 @@
         <div class="chart-card">
           <div class="chart-card-header">
             <div class="chart-title-group">
-              <h3 id="title-chart-status"><i class="fa-solid fa-circle-notch"></i> 82% das Cargas Finalizadas no Horário</h3>
+              <h3 id="title-chart-status"><i data-lucide="pie-chart"></i> 82% das Cargas Finalizadas no Horário</h3>
               <span class="chart-subtitle" id="subtitle-chart-status">Apenas 2 veículos permanecem em processo de doca</span>
             </div>
             <span class="chart-badge">Volume</span>
@@ -517,7 +544,7 @@
         <div class="chart-card">
           <div class="chart-card-header">
             <div class="chart-title-group">
-              <h3 id="title-chart-iscas"><i class="fa-solid fa-satellite-dish text-danger"></i> 7 Iscas com Retorno Pendente</h3>
+              <h3 id="title-chart-iscas"><i data-lucide="radio" class="text-danger inline-block mr-1"></i> 7 Iscas com Retorno Pendente</h3>
               <span class="chart-subtitle" id="subtitle-chart-iscas">Risco de defasagem de estoque de rastreadores</span>
             </div>
             <span class="chart-badge badge-danger">Atenção</span>
@@ -535,7 +562,7 @@
         <div class="chart-card chart-card-wide">
           <div class="chart-card-header">
             <div class="chart-title-group">
-              <h3 id="title-chart-docas"><i class="fa-solid fa-warehouse"></i> Doca 8 Concentra Maior Gargalo Operacional</h3>
+              <h3 id="title-chart-docas"><i data-lucide="building-2"></i> Doca 8 Concentra Maior Gargalo Operacional</h3>
               <span class="chart-subtitle" id="subtitle-chart-docas">Destaque em laranja representa a doca com maior fluxo</span>
             </div>
             <span class="chart-badge">Capacidade</span>
@@ -553,7 +580,7 @@
         <div class="chart-card">
           <div class="chart-card-header">
             <div class="chart-title-group">
-              <h3 id="title-chart-conferentes"><i class="fa-solid fa-users-gear"></i> Distribuição de Trabalho da Equipe</h3>
+              <h3 id="title-chart-conferentes"><i data-lucide="users"></i> Distribuição de Trabalho da Equipe</h3>
               <span class="chart-subtitle" id="subtitle-chart-conferentes">Conferências concluídas por operador no turno</span>
             </div>
             <span class="chart-badge">Produtividade</span>
@@ -567,7 +594,7 @@
         <div class="chart-card">
           <div class="chart-card-header">
             <div class="chart-title-group">
-              <h3><i class="fa-solid fa-triangle-exclamation text-danger"></i> Ação Imediata: Iscas Pendentes de Coleta</h3>
+              <h3><i data-lucide="alert-triangle" class="text-danger inline-block mr-1"></i> Ação Imediata: Iscas Pendentes de Coleta</h3>
               <span class="chart-subtitle">Registros que exigem baixa operacional imediata</span>
             </div>
             <span class="chart-badge badge-danger" id="dash-badge-pendentes">0 pendentes</span>
@@ -601,7 +628,7 @@
     <div class="modal-box">
       <div class="modal-header">
         <div class="modal-title-wrap">
-          <i class="fa-solid fa-truck-ramp-box modal-icon"></i>
+          <i data-lucide="truck" class="modal-icon"></i>
           <div>
             <h2 id="modal-title-text">Novo Carregamento</h2>
             <span class="modal-subtitle">Controle de Doca e Rastreamento de Isca</span>
@@ -616,7 +643,7 @@
         <div class="form-grid">
           <!-- Unidade -->
           <div class="form-group col-12">
-            <label for="form-unidade"><i class="fa-solid fa-warehouse"></i> Unidade Operacional *</label>
+            <label for="form-unidade"><i data-lucide="building-2"></i> Unidade Operacional *</label>
             <select id="form-unidade" required>
               <!-- Filled dynamically -->
             </select>
@@ -624,37 +651,37 @@
 
           <!-- Rota -->
           <div class="form-group col-4">
-            <label for="form-rota"><i class="fa-solid fa-route"></i> Rota *</label>
+            <label for="form-rota"><i data-lucide="route"></i> Rota *</label>
             <input type="text" id="form-rota" placeholder="Ex: 1A, 2A/B, 3C" required>
           </div>
 
           <!-- Placa -->
           <div class="form-group col-4">
-            <label for="form-placa"><i class="fa-solid fa-id-card"></i> Placa do Veículo *</label>
+            <label for="form-placa"><i data-lucide="credit-card"></i> Placa do Veículo *</label>
             <input type="text" id="form-placa" placeholder="ABC1D23" maxlength="8" required style="text-transform: uppercase;">
           </div>
 
           <!-- Doca -->
           <div class="form-group col-4">
-            <label for="form-doca"><i class="fa-solid fa-door-open"></i> Doca *</label>
+            <label for="form-doca"><i data-lucide="log-in"></i> Doca *</label>
             <input type="text" id="form-doca" placeholder="Ex: 8, 10, 11, 12" required>
           </div>
 
           <!-- Motorista -->
           <div class="form-group col-8">
-            <label for="form-motorista"><i class="fa-solid fa-user"></i> Nome do Motorista *</label>
+            <label for="form-motorista"><i data-lucide="user"></i> Nome do Motorista *</label>
             <input type="text" id="form-motorista" placeholder="Nome completo do motorista" required style="text-transform: uppercase;">
           </div>
 
           <!-- Conferente -->
           <div class="form-group col-4">
-            <label for="form-conferente"><i class="fa-solid fa-clipboard-check"></i> Conferente *</label>
+            <label for="form-conferente"><i data-lucide="clipboard-check"></i> Conferente *</label>
             <input type="text" id="form-conferente" placeholder="Ex: JOÃO, NELSON" required style="text-transform: uppercase;">
           </div>
 
           <!-- Horário Início -->
           <div class="form-group col-6">
-            <label for="form-inicio"><i class="fa-regular fa-clock"></i> Início do Carregamento *</label>
+            <label for="form-inicio"><i data-lucide="clock"></i> Início do Carregamento *</label>
             <div class="input-with-action">
               <input type="time" id="form-inicio" required>
               <button type="button" class="btn-input-action" id="btn-now-inicio" title="Inserir hora atual">Agora</button>
@@ -663,7 +690,7 @@
 
           <!-- Horário Fim -->
           <div class="form-group col-6">
-            <label for="form-fim"><i class="fa-solid fa-flag-checkered"></i> Término do Carregamento</label>
+            <label for="form-fim"><i data-lucide="flag"></i> Término do Carregamento</label>
             <div class="input-with-action">
               <input type="time" id="form-fim">
               <button type="button" class="btn-input-action" id="btn-now-fim" title="Inserir hora atual">Agora</button>
@@ -672,13 +699,13 @@
 
           <!-- Código da Isca -->
           <div class="form-group col-6">
-            <label for="form-isca"><i class="fa-solid fa-satellite-dish"></i> Número / Código da Isca</label>
+            <label for="form-isca"><i data-lucide="radio"></i> Número / Código da Isca</label>
             <input type="text" id="form-isca" placeholder="Ex: 5583, ou deixe vazio para S/ISCA">
           </div>
 
           <!-- Retorno Isca -->
           <div class="form-group col-6">
-            <label for="form-retorno-isca"><i class="fa-solid fa-arrow-rotate-left"></i> Retorno da Isca</label>
+            <label for="form-retorno-isca"><i data-lucide="rotate-ccw"></i> Retorno da Isca</label>
             <select id="form-retorno-isca">
               <option value="PENDENTE">🔴 Pendente de Retorno</option>
               <option value="OK">🟢 Retornada (OK)</option>
@@ -696,7 +723,7 @@
 
           <!-- Observações Adicionais -->
           <div class="form-group col-12">
-            <label for="form-obs"><i class="fa-regular fa-comment-dots"></i> Observações da Operação (Opcional)</label>
+            <label for="form-obs"><i data-lucide="message-square"></i> Observações da Operação (Opcional)</label>
             <textarea id="form-obs" rows="2" placeholder="Observações de peso, lacres, notas fiscais ou restrições..."></textarea>
           </div>
         </div>
@@ -704,7 +731,7 @@
         <div class="modal-footer">
           <button type="button" class="btn-secondary" id="btn-cancelar-form">Cancelar</button>
           <button type="submit" class="btn-primary" id="btn-salvar-registro">
-            <i class="fa-solid fa-floppy-disk"></i> Salvar Operação
+            <i data-lucide="save"></i> Salvar Operação
           </button>
         </div>
       </form>
@@ -716,7 +743,7 @@
     <div class="modal-box modal-box-sm">
       <div class="modal-header">
         <div class="modal-title-wrap">
-          <i class="fa-solid fa-building-columns modal-icon"></i>
+          <i data-lucide="building-2" class="modal-icon"></i>
           <div>
             <h2>Gerenciar Unidades</h2>
             <span class="modal-subtitle">Adicione filiais ou centros de distribuição</span>
@@ -729,7 +756,7 @@
         <form id="form-nova-unidade" class="inline-add-form">
           <input type="text" id="input-nova-unidade" placeholder="Ex: CD Campinas (SP)" required>
           <button type="submit" class="btn-primary">
-            <i class="fa-solid fa-plus"></i> Adicionar
+            <i data-lucide="plus"></i> Adicionar
           </button>
         </form>
 
@@ -742,12 +769,14 @@
       <div class="modal-footer">
         <button type="button" class="btn-secondary" id="btn-fechar-unidades">Concluir</button>
       </div>
+    </div>
+  </div>
   <!-- Modal: Gerenciar Usuários (Administrador) -->
   <div class="modal-backdrop" id="modal-usuarios" style="display: none;">
     <div class="modal-box modal-box-md">
       <div class="modal-header">
         <div class="modal-title-wrap">
-          <i class="fa-solid fa-users-gear modal-icon"></i>
+          <i data-lucide="users" class="modal-icon"></i>
           <div>
             <h2>Gestão de Usuários e Permissões</h2>
             <span class="modal-subtitle">Cadastre novos operadores ou administradores</span>
@@ -796,7 +825,7 @@
           </div>
           <div class="form-field-full">
             <button type="submit" class="btn-primary" id="btn-save-new-user">
-              <i class="fa-solid fa-user-plus"></i> Criar Novo Login
+              <i data-lucide="user-plus"></i> Criar Novo Login
             </button>
           </div>
         </form>
@@ -831,7 +860,7 @@
     <div class="modal-box modal-box-sm">
       <div class="modal-header modal-header-isca">
         <div class="modal-title-wrap">
-          <i class="fa-solid fa-satellite-dish modal-icon text-orange"></i>
+          <i data-lucide="radio" class="modal-icon text-orange"></i>
           <div>
             <h2>Confirmar Devolução de Isca</h2>
             <span class="modal-subtitle">Confirmação física de recolhimento do dispositivo</span>
@@ -872,7 +901,7 @@
         </div>
 
         <div class="alert-info-box">
-          <i class="fa-solid fa-circle-check text-green"></i>
+          <i data-lucide="check-circle-2" class="text-green"></i>
           <span>Ao confirmar, a isca será marcada como <strong>OK</strong> e a linha será transferida da grade ativa para o <strong>Histórico de Baixas Concluídas</strong>.</span>
         </div>
       </div>
@@ -880,12 +909,19 @@
       <div class="modal-footer">
         <button type="button" class="btn-secondary" id="btn-cancel-isca" onclick="fecharModalConfirmIsca()">Cancelar</button>
         <button type="button" class="btn-primary btn-success-confirm" id="btn-confirm-isca-submit">
-          <i class="fa-solid fa-check"></i> Confirmar Baixa & Arquivar
+          <i data-lucide="check"></i> Confirmar Baixa & Arquivar
         </button>
       </div>
     </div>
   </div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+  </script>
 </body>
 </html>

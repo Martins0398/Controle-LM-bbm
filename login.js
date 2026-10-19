@@ -27,13 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
   btnTogglePassword.addEventListener('click', () => {
     const isPassword = inputPassword.type === 'password';
     inputPassword.type = isPassword ? 'text' : 'password';
-    pwdIcon.className = isPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    pwdIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+    if (window.lucide) lucide.createIcons();
   });
 
   // Modal Esqueci Senha
   linkForgot.addEventListener('click', (e) => {
     e.preventDefault();
     modalForgot.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
   });
 
   const fecharModalForgot = () => { modalForgot.style.display = 'none'; };
@@ -43,6 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
   modalForgot.addEventListener('click', (e) => {
     if (e.target === modalForgot) fecharModalForgot();
   });
+
+  if (window.lucide) lucide.createIcons();
 
   // Acesso Rápido para Demonstração / Teste
   const demoButtons = document.querySelectorAll('.btn-demo-profile');
