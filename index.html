@@ -760,55 +760,57 @@
         <!-- Formulário de Novo Usuário -->
         <form id="form-novo-usuario" class="user-add-grid">
           <div class="form-field">
-            <label>Nome Completo</label>
-            <input type="text" id="input-user-name" placeholder="Ex: Roberto Alves" required>
+            <label>Login de Acesso / Matrícula</label>
+            <input type="text" id="input-user-matricula" placeholder="Ex: Curitiba ou GestorDF" required>
           </div>
           <div class="form-field">
-            <label>E-mail Corporativo</label>
-            <input type="email" id="input-user-email" placeholder="roberto@bbmlogistica.com.br" required>
+            <label>Senha de Acesso</label>
+            <input type="password" id="input-user-pass" placeholder="Definir senha (ex: 123456)" required>
           </div>
           <div class="form-field">
-            <label>Matrícula BBM</label>
-            <input type="text" id="input-user-matricula" placeholder="BBM-105" required>
+            <label>Nome de Identificação</label>
+            <input type="text" id="input-user-name" placeholder="Ex: Operador Curitiba" required>
           </div>
           <div class="form-field">
-            <label>Senha Inicial</label>
-            <input type="password" id="input-user-pass" placeholder="Definir senha forte" required>
+            <label>E-mail Corporativo (Opcional)</label>
+            <input type="email" id="input-user-email" placeholder="Opcional: login@bbmlogistica.com.br">
           </div>
           <div class="form-field">
-            <label>Perfil de Acesso</label>
+            <label>Perfil de Permissão</label>
             <select id="select-user-role" required>
-              <option value="operador">Operador / Conferente</option>
-              <option value="admin">Administrador (Total)</option>
+              <option value="operador">Operador de Filial (Acesso Restrito)</option>
+              <option value="admin">Administrador Master (Acesso Total)</option>
             </select>
           </div>
           <div class="form-field">
-            <label>Unidade Padrão</label>
+            <label>Unidade Autorizada</label>
             <select id="select-user-unidade" required>
+              <option value="todas">🌐 Todas as Unidades (Acesso Total)</option>
               <option value="CD São Paulo">CD São Paulo</option>
               <option value="CD Curitiba">CD Curitiba</option>
               <option value="CD Rio de Janeiro">CD Rio de Janeiro</option>
               <option value="CD Belo Horizonte">CD Belo Horizonte</option>
               <option value="CD Porto Alegre">CD Porto Alegre</option>
+              <option value="Brasília">Brasília</option>
             </select>
           </div>
           <div class="form-field-full">
             <button type="submit" class="btn-primary" id="btn-save-new-user">
-              <i class="fa-solid fa-user-plus"></i> Cadastrar Usuário
+              <i class="fa-solid fa-user-plus"></i> Criar Novo Login
             </button>
           </div>
         </form>
 
-        <h4 class="section-subtitle" style="margin-top: 20px;">Usuários do Sistema</h4>
+        <h4 class="section-subtitle" style="margin-top: 20px;">Usuários e Logins Cadastrados</h4>
         <div class="user-table-wrap">
           <table class="user-manage-table">
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>E-mail</th>
-                <th>Matrícula</th>
+                <th>Login / Matrícula</th>
                 <th>Perfil</th>
-                <th>Unidade</th>
+                <th>Unidade Autorizada</th>
+                <th style="text-align: center;">Ações</th>
               </tr>
             </thead>
             <tbody id="lista-usuarios-cadastrados">
@@ -884,6 +886,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 /**
  * Controle Operacional de Docas & Dashboard Analítico
- * BBM Logística / Translovato / Lagexpress / Diálogo
+ * BBM Logística / Translovato / Diálogo
  */
 
 // Storage Keys
@@ -15,7 +15,8 @@ const DEFAULT_UNITS = [
   "CD Curitiba",
   "CD Rio de Janeiro",
   "CD Belo Horizonte",
-  "CD Porto Alegre"
+  "CD Porto Alegre",
+  "Brasília"
 ];
 
 // Initial Data Seed (Exact records from user's image + additional demo units)
@@ -281,6 +282,10 @@ async function initAuth() {
         const data = await res.json();
         if (data.authenticated && data.user) {
           state.currentUser = data.user;
+          // Se o usuário tem unidade restrita, define sua unidade ativa
+          if (data.user.unidade && data.user.unidade !== 'todas') {
+            state.activeUnidade = data.user.unidade;
+          }
           updateUserHeaderUI(data.user);
           return;
         }
@@ -298,6 +303,9 @@ async function initAuth() {
   if (cachedUser) {
     try {
       state.currentUser = JSON.parse(cachedUser);
+      if (state.currentUser.unidade && state.currentUser.unidade !== 'todas') {
+        state.activeUnidade = state.currentUser.unidade;
+      }
       updateUserHeaderUI(state.currentUser);
     } catch (e) {
       setDefaultGuestUser();
@@ -309,9 +317,9 @@ async function initAuth() {
 
 function setDefaultGuestUser() {
   state.currentUser = {
-    name: "Operador Local",
-    role: "operador",
-    unidade: "CD São Paulo"
+    name: "Diálogo Logística (Master)",
+    role: "admin",
+    unidade: "todas"
   };
   updateUserHeaderUI(state.currentUser);
 }
@@ -320,15 +328,26 @@ function updateUserHeaderUI(user) {
   const nameEl = document.getElementById('user-display-name');
   const roleEl = document.getElementById('user-display-role');
   const btnAdmin = document.getElementById('btn-admin-users');
+  const btnAddUnit = document.getElementById('btn-gerenciar-unidades');
 
   if (nameEl) nameEl.textContent = user.name || 'Usuário BBM';
   if (roleEl) {
-    roleEl.textContent = user.role === 'admin' ? 'Administrador' : 'Operador';
-    roleEl.style.color = user.role === 'admin' ? '#38bdf8' : '#f95738';
+    if (user.unidade && user.unidade !== 'todas') {
+      roleEl.textContent = `Operador • ${user.unidade}`;
+      roleEl.style.color = '#38bdf8';
+    } else {
+      roleEl.textContent = user.role === 'admin' ? 'Administrador Master' : 'Operador Geral';
+      roleEl.style.color = user.role === 'admin' ? '#38bdf8' : '#10b981';
+    }
   }
 
+  // Apenas Administrador Geral/Master pode ver botão de gestão de usuários e gerenciar unidades
+  const isMasterAdmin = (user.role === 'admin' && (user.unidade === 'todas' || !user.unidade));
   if (btnAdmin) {
-    btnAdmin.style.display = user.role === 'admin' ? 'flex' : 'none';
+    btnAdmin.style.display = isMasterAdmin ? 'flex' : 'none';
+  }
+  if (btnAddUnit) {
+    btnAddUnit.style.display = isMasterAdmin ? 'flex' : 'none';
   }
 }
 
@@ -498,27 +517,55 @@ window.alternarAba = function(tabName) {
 function populateUnitSelects() {
   const mainSelect = document.getElementById('select-unidade');
   const formSelect = document.getElementById('form-unidade');
+  const btnAddUnit = document.getElementById('btn-gerenciar-unidades');
 
-  // Main Selector
-  mainSelect.innerHTML = `<option value="todas">🌐 Visão Geral (Todas as Unidades)</option>`;
-  state.unidades.forEach(unit => {
-    const opt = document.createElement('option');
-    opt.value = unit;
-    opt.textContent = `📍 ${unit}`;
-    if (unit === state.activeUnidade) opt.selected = true;
-    mainSelect.appendChild(opt);
-  });
-  if (state.activeUnidade === 'todas') mainSelect.value = 'todas';
+  const user = state.currentUser;
+  const isRestricted = (user && user.unidade && user.unidade !== 'todas');
 
-  // Form Selector
-  formSelect.innerHTML = '';
-  state.unidades.forEach(unit => {
-    const opt = document.createElement('option');
-    opt.value = unit;
-    opt.textContent = unit;
-    if (unit === state.activeUnidade) opt.selected = true;
-    formSelect.appendChild(opt);
-  });
+  if (isRestricted) {
+    // Usuário restrito a uma filial (ex: Brasília)
+    state.activeUnidade = user.unidade;
+    mainSelect.innerHTML = `<option value="${user.unidade}">📍 ${user.unidade} (Acesso Restrito)</option>`;
+    mainSelect.value = user.unidade;
+    mainSelect.disabled = true;
+    mainSelect.style.cursor = 'not-allowed';
+    mainSelect.title = `Acesso restrito à unidade ${user.unidade}`;
+    if (btnAddUnit) btnAddUnit.style.display = 'none';
+
+    // Form Selector travado na unidade do usuário
+    formSelect.innerHTML = `<option value="${user.unidade}">${user.unidade}</option>`;
+    formSelect.value = user.unidade;
+    formSelect.disabled = true;
+  } else {
+    // Acesso Geral / Master (todas as unidades)
+    mainSelect.disabled = false;
+    mainSelect.style.cursor = 'pointer';
+    mainSelect.title = "Selecione a Unidade Operacional";
+    if (btnAddUnit && user && user.role === 'admin') {
+      btnAddUnit.style.display = 'flex';
+    }
+
+    mainSelect.innerHTML = `<option value="todas">🌐 Visão Geral (Todas as Unidades)</option>`;
+    state.unidades.forEach(unit => {
+      const opt = document.createElement('option');
+      opt.value = unit;
+      opt.textContent = `📍 ${unit}`;
+      if (unit === state.activeUnidade) opt.selected = true;
+      mainSelect.appendChild(opt);
+    });
+    if (state.activeUnidade === 'todas') mainSelect.value = 'todas';
+
+    // Form Selector livre
+    formSelect.innerHTML = '';
+    state.unidades.forEach(unit => {
+      const opt = document.createElement('option');
+      opt.value = unit;
+      opt.textContent = unit;
+      if (unit === state.activeUnidade) opt.selected = true;
+      formSelect.appendChild(opt);
+    });
+    formSelect.disabled = false;
+  }
 
   updateUnitIndicatorText();
 }
@@ -526,7 +573,11 @@ function populateUnitSelects() {
 function updateUnitIndicatorText() {
   const ind = document.getElementById('top-indicator-unit');
   const dashTitle = document.getElementById('dash-active-unit-title');
-  const text = state.activeUnidade === 'todas' ? 'Visão Geral (Todas as Unidades)' : state.activeUnidade;
+  const user = state.currentUser;
+  let text = state.activeUnidade === 'todas' ? 'Visão Geral (Todas as Unidades)' : state.activeUnidade;
+  if (user && user.unidade && user.unidade !== 'todas') {
+    text = `Unidade ${user.unidade} (Acesso Exclusivo)`;
+  }
   if (ind) ind.textContent = text;
   if (dashTitle) dashTitle.textContent = text;
 }
@@ -598,6 +649,12 @@ function renderKPIs() {
 
 // Get scoped data by unit
 function getScopedData() {
+  const user = state.currentUser;
+  // Se o usuário tem unidade restrita, NUNCA retorna dados de outras unidades
+  if (user && user.unidade && user.unidade !== 'todas') {
+    return state.registros.filter(r => r.unidade === user.unidade);
+  }
+
   if (state.activeUnidade === 'todas') {
     return state.registros;
   }
@@ -1716,13 +1773,8 @@ function setupEventListeners() {
 // ==========================================
 
 async function realizarLogout() {
-  if (confirm("Deseja realmente encerrar a sessão?")) {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (e) {}
-    localStorage.removeItem('bbm_logged_user');
-    window.location.href = '/login.html';
-  }
+  localStorage.removeItem('bbm_logged_user');
+  window.location.href = '/logout';
 }
 
 function abrirModalUsuarios() {
@@ -1737,7 +1789,19 @@ function fecharModalUsuarios() {
 
 async function carregarListaUsuarios() {
   const tbody = document.getElementById('lista-usuarios-cadastrados');
+  const selectUnidadeUser = document.getElementById('select-user-unidade');
   if (!tbody) return;
+
+  // Popula dinamicamente as opções de unidades no modal
+  if (selectUnidadeUser) {
+    const currentVal = selectUnidadeUser.value || 'todas';
+    selectUnidadeUser.innerHTML = `
+      <option value="todas">🌐 Todas as Unidades (Acesso Total)</option>
+      ${state.unidades.map(u => `<option value="${u}">📍 ${u}</option>`).join('')}
+    `;
+    selectUnidadeUser.value = currentVal;
+  }
+
   tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 12px; color: var(--text-secondary);">Carregando usuários...</td></tr>`;
 
   try {
@@ -1750,15 +1814,30 @@ async function carregarListaUsuarios() {
       return;
     }
 
-    tbody.innerHTML = users.map(u => `
-      <tr>
-        <td><strong>${u.name}</strong></td>
-        <td>${u.email}</td>
-        <td><code>${u.matricula}</code></td>
-        <td><span class="pill-badge ${u.role === 'admin' ? 'status-ok' : ''}" style="font-size:0.75rem; padding: 2px 6px;">${u.role === 'admin' ? 'Administrador' : 'Operador'}</span></td>
-        <td>${u.unidade || 'CD São Paulo'}</td>
-      </tr>
-    `).join('');
+    const currentUserId = state.currentUser ? state.currentUser.id : null;
+
+    tbody.innerHTML = users.map(u => {
+      const isSelf = (currentUserId && u.id === currentUserId);
+      const unitText = (u.unidade === 'todas') ? '🌐 Todas as Unidades' : `📍 ${u.unidade}`;
+      const roleText = (u.role === 'admin') ? 'Administrador Master' : 'Operador';
+      const roleBadge = (u.role === 'admin') ? 'status-ok' : '';
+
+      const actionBtn = isSelf 
+        ? `<span style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;">(Você)</span>`
+        : `<button type="button" class="btn-table-action delete" onclick="excluirUsuario('${u.id}', '${u.matricula}')" title="Excluir Login ${u.matricula}" style="color:#ef4444; border:none; background:transparent; cursor:pointer; font-size:0.9rem;">
+             <i class="fa-solid fa-trash-can"></i>
+           </button>`;
+
+      return `
+        <tr>
+          <td><strong>${u.name}</strong></td>
+          <td><code>${u.matricula}</code></td>
+          <td><span class="pill-badge ${roleBadge}" style="font-size:0.75rem; padding: 2px 6px;">${roleText}</span></td>
+          <td>${unitText}</td>
+          <td style="text-align: center;">${actionBtn}</td>
+        </tr>
+      `;
+    }).join('');
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 12px;">Erro ao carregar usuários ou permissão negada.</td></tr>`;
   }
@@ -1766,21 +1845,22 @@ async function carregarListaUsuarios() {
 
 async function cadastrarNovoUsuario(e) {
   e.preventDefault();
-  const name = document.getElementById('input-user-name').value.trim();
-  const email = document.getElementById('input-user-email').value.trim();
   const matricula = document.getElementById('input-user-matricula').value.trim();
   const password = document.getElementById('input-user-pass').value;
+  const name = document.getElementById('input-user-name').value.trim();
+  const emailInput = document.getElementById('input-user-email');
+  const email = emailInput ? emailInput.value.trim() : '';
   const role = document.getElementById('select-user-role').value;
   const unidade = document.getElementById('select-user-unidade').value;
 
-  if (!name || !email || !matricula || !password) {
-    alert("Preencha todos os campos obrigatórios.");
+  if (!name || !matricula || !password) {
+    alert("Preencha o Login, a Senha e o Nome de identificação.");
     return;
   }
 
   const btn = document.getElementById('btn-save-new-user');
   btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Cadastrando...`;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Criando login...`;
 
   try {
     const res = await fetch('/api/admin/users', {
@@ -1791,7 +1871,7 @@ async function cadastrarNovoUsuario(e) {
 
     const data = await res.json();
     if (res.ok && data.success) {
-      alert("Usuário cadastrado com sucesso!");
+      alert(`Login "${matricula}" criado com sucesso!\nUnidade: ${unidade === 'todas' ? 'Todas as Unidades' : unidade}`);
       document.getElementById('form-novo-usuario').reset();
       carregarListaUsuarios();
     } else {
@@ -1801,9 +1881,27 @@ async function cadastrarNovoUsuario(e) {
     alert("Erro na conexão com o servidor.");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-user-plus"></i> Cadastrar Usuário`;
+    btn.innerHTML = `<i class="fa-solid fa-user-plus"></i> Criar Novo Login`;
   }
 }
+
+window.excluirUsuario = async function(id, matricula) {
+  if (!confirm(`Deseja realmente excluir o login "${matricula}" do sistema?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      carregarListaUsuarios();
+    } else {
+      alert(data.error || "Não foi possível excluir o usuário.");
+    }
+  } catch (err) {
+    alert("Erro de conexão ao excluir usuário.");
+  }
+};
 
 // ==========================================
 // FUNÇÕES DA ABA HISTÓRICO DE BAIXAS & CONFIRMAÇÃO DE ISCAS

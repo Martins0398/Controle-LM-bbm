@@ -66,7 +66,7 @@ for unit_title, rows in units:
     # Title Banner (Row 1)
     ws.merge_cells("A1:J1")
     title_cell = ws["A1"]
-    title_cell.value = f"BBM LOGÍSTICA | TRANSLOVATO | LAGEXPRESS | DIÁLOGO — {unit_title.upper()}"
+    title_cell.value = f"BBM LOGÍSTICA | TRANSLOVATO | DIÁLOGO — {unit_title.upper()}"
     title_cell.font = Font(name="Segoe UI", size=11, bold=True, color=WHITE)
     title_cell.fill = PatternFill(start_color=NAVY_HEADER, end_color=NAVY_HEADER, fill_type="solid")
     title_cell.alignment = Alignment(horizontal="center", vertical="center")

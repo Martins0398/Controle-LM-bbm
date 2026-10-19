@@ -96,58 +96,64 @@ function verifyPassword(password, hash, salt) {
 
 // Seed Inicial de Usuários e Unidades
 function seedInitialData() {
-  const userCount = db.prepare('SELECT count(*) as count FROM users').get().count;
-  if (userCount === 0) {
-    console.log('[Seed] Criando usuários padrão...');
-    
-    // 1. Administrador BBM
-    const adminPass = hashPassword('Admin@BBM2026');
-    db.prepare(`
-      INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      'usr-admin-1',
-      'Administrador BBM',
-      'admin@bbmlogistica.com.br',
-      'BBM-001',
-      adminPass.hash,
-      adminPass.salt,
-      'admin',
-      'CD São Paulo'
-    );
+  // Garante a tabela de unidades com Brasília
+  const defaultUnits = [
+    "CD São Paulo",
+    "CD Curitiba",
+    "CD Rio de Janeiro",
+    "CD Belo Horizonte",
+    "CD Porto Alegre",
+    "Brasília"
+  ];
+  const stmtUnit = db.prepare('INSERT OR IGNORE INTO units (name) VALUES (?)');
+  defaultUnits.forEach(u => stmtUnit.run(u));
 
-    // 2. Operador / Conferente
-    const opPass = hashPassword('Operador@BBM2026');
-    db.prepare(`
-      INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      'usr-op-1',
-      'João Silva (Conferente)',
-      'operador@bbmlogistica.com.br',
-      'BBM-002',
-      opPass.hash,
-      opPass.salt,
-      'operador',
-      'CD São Paulo'
-    );
+  // Migração e garantia dos logins solicitados:
+  // 1. Login Master: Dialogo / 123456 (Acesso a todas as unidades)
+  const masterPass = hashPassword('123456');
+  db.prepare(`
+    INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(matricula) DO UPDATE SET
+      name = excluded.name,
+      email = excluded.email,
+      password_hash = excluded.password_hash,
+      salt = excluded.salt,
+      role = excluded.role,
+      unidade = excluded.unidade
+  `).run(
+    'usr-master-dialogo',
+    'Diálogo Logística (Master)',
+    'dialogo@bbmlogistica.com.br',
+    'Dialogo',
+    masterPass.hash,
+    masterPass.salt,
+    'admin',
+    'todas'
+  );
 
-    console.log('[Seed] Usuários criados com sucesso.');
-  }
-
-  // Seed de Unidades
-  const unitCount = db.prepare('SELECT count(*) as count FROM units').get().count;
-  if (unitCount === 0) {
-    const defaultUnits = [
-      "CD São Paulo",
-      "CD Curitiba",
-      "CD Rio de Janeiro",
-      "CD Belo Horizonte",
-      "CD Porto Alegre"
-    ];
-    const stmt = db.prepare('INSERT OR IGNORE INTO units (name) VALUES (?)');
-    defaultUnits.forEach(u => stmt.run(u));
-  }
+  // 2. Login Unidade: Brasilia / 123456 (Acesso exclusivo à unidade Brasília)
+  const bsbPass = hashPassword('123456');
+  db.prepare(`
+    INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(matricula) DO UPDATE SET
+      name = excluded.name,
+      email = excluded.email,
+      password_hash = excluded.password_hash,
+      salt = excluded.salt,
+      role = excluded.role,
+      unidade = excluded.unidade
+  `).run(
+    'usr-unit-brasilia',
+    'Unidade Brasília',
+    'brasilia@bbmlogistica.com.br',
+    'Brasilia',
+    bsbPass.hash,
+    bsbPass.salt,
+    'operador',
+    'Brasília'
+  );
 
   // Seed de Registros de Docas (Se vazio)
   const recCount = db.prepare('SELECT count(*) as count FROM dock_records').get().count;
@@ -173,6 +179,23 @@ function seedInitialData() {
     `);
 
     defaultRecords.forEach(r => {
+      insertStmt.run(r.id, r.unidade, r.rota, r.motorista, r.placa, r.doca, r.conferente, r.inicio, r.fim, r.isca, r.retornoIsca, r.placaLiberada, r.destaqueLinha, r.obs);
+    });
+  }
+
+  // Garante registros de demonstração para a filial Brasília
+  const bsbCount = db.prepare('SELECT count(*) as count FROM dock_records WHERE unidade = ?').get('Brasília').count;
+  if (bsbCount === 0) {
+    const insertStmt = db.prepare(`
+      INSERT INTO dock_records (id, unidade, rota, motorista, placa, doca, conferente, inicio, fim, isca, retornoIsca, placaLiberada, destaqueLinha, obs)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const bsbRecords = [
+      { id: "bsb-rec-1", unidade: "Brasília", rota: "BSB-01", motorista: "CARLOS HENRIQUE VIEIRA", placa: "JGK4E22", doca: "1", conferente: "MARCOS", inicio: "07:30", fim: "08:15", isca: "9821", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "Rota prioritária DF" },
+      { id: "bsb-rec-2", unidade: "Brasília", rota: "BSB-02", motorista: "FERNANDO TAVARES LIMA", placa: "PAE8820", doca: "2", conferente: "LUCAS", inicio: "08:00", fim: "", isca: "3340", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 0, obs: "Em carregamento na doca 2" },
+      { id: "bsb-rec-3", unidade: "Brasília", rota: "BSB-03", motorista: "RAFAEL SOUSA MENDES", placa: "RCN3B15", doca: "3", conferente: "MARCOS", inicio: "06:45", fim: "07:20", isca: "5512", retornoIsca: "OK", placaLiberada: 0, destaqueLinha: 0, obs: "Baixa realizada com sucesso" }
+    ];
+    bsbRecords.forEach(r => {
       insertStmt.run(r.id, r.unidade, r.rota, r.motorista, r.placa, r.doca, r.conferente, r.inicio, r.fim, r.isca, r.retornoIsca, r.placaLiberada, r.destaqueLinha, r.obs);
     });
   }
@@ -363,6 +386,20 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // GET /logout (Encerramento instantâneo de sessão)
+  if (pathname === '/logout') {
+    const token = getSessionToken(req);
+    if (token) {
+      db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    }
+    const expiredCookie = `bbm_auth_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+    res.writeHead(302, {
+      'Location': '/login.html',
+      'Set-Cookie': expiredCookie
+    });
+    return res.end();
+  }
+
   // POST /api/auth/logout
   if (pathname === '/api/auth/logout' && method === 'POST') {
     const token = getSessionToken(req);
@@ -528,9 +565,12 @@ const server = http.createServer(async (req, res) => {
 
     try {
       const { name, email, matricula, password, role, unidade } = await parseBody(req);
-      if (!name || !email || !matricula || !password) {
-        return sendJson(res, 400, { error: 'Todos os campos obrigatórios devem ser preenchidos.' });
+      if (!name || !matricula || !password) {
+        return sendJson(res, 400, { error: 'Nome, Login/Matrícula e Senha são obrigatórios.' });
       }
+
+      const loginClean = matricula.trim();
+      const userEmail = (email && email.trim()) ? email.trim().toLowerCase() : `${loginClean.toLowerCase()}@bbmlogistica.com.br`;
 
       const { hash, salt } = hashPassword(password);
       const newId = 'usr-' + Date.now();
@@ -541,21 +581,37 @@ const server = http.createServer(async (req, res) => {
       `).run(
         newId,
         name.trim(),
-        email.trim().toLowerCase(),
-        matricula.trim().toUpperCase(),
+        userEmail,
+        loginClean,
         hash,
         salt,
         role || 'operador',
-        unidade || 'CD São Paulo'
+        unidade || 'todas'
       );
 
       return sendJson(res, 201, { success: true, message: 'Usuário cadastrado com sucesso!' });
     } catch (err) {
       if (err.message && err.message.includes('UNIQUE constraint')) {
-        return sendJson(res, 409, { error: 'E-mail ou Matrícula já cadastrada no sistema.' });
+        return sendJson(res, 409, { error: 'Login ou E-mail já cadastrado no sistema.' });
       }
       return sendJson(res, 500, { error: 'Erro ao cadastrar usuário: ' + err.message });
     }
+  }
+
+  // DELETE /api/admin/users/:id (Excluir usuário)
+  if (pathname.startsWith('/api/admin/users/') && method === 'DELETE') {
+    const user = getAuthenticatedUser(req);
+    if (!user || user.role !== 'admin') {
+      return sendJson(res, 403, { error: 'Acesso restrito a administradores' });
+    }
+
+    const targetId = pathname.split('/').pop();
+    if (targetId === user.id) {
+      return sendJson(res, 400, { error: 'Você não pode excluir o usuário com o qual está atualmente conectado.' });
+    }
+
+    db.prepare('DELETE FROM users WHERE id = ?').run(targetId);
+    return sendJson(res, 200, { success: true, message: 'Usuário excluído com sucesso.' });
   }
 
   // ==========================================

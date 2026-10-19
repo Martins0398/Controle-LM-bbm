@@ -49,12 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
   demoButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const role = btn.getAttribute('data-role');
-      if (role === 'admin') {
-        inputIdentifier.value = 'admin@bbmlogistica.com.br';
-        inputPassword.value = 'Admin@BBM2026';
+      if (role === 'dialogo' || role === 'admin') {
+        inputIdentifier.value = 'Dialogo';
+        inputPassword.value = '123456';
       } else {
-        inputIdentifier.value = 'operador@bbmlogistica.com.br';
-        inputPassword.value = 'Operador@BBM2026';
+        inputIdentifier.value = 'Brasilia';
+        inputPassword.value = '123456';
       }
       hideAlert();
       inputPassword.focus();
