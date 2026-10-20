@@ -278,7 +278,19 @@ const server = http.createServer(async (req, res) => {
   const method = req.method;
 
   // ROTA 1: Página Inicial (Redirecionamento Inteligente)
-  if (pathname === '/' || pathname === '/index.html') {
+  if (pathname === '/' || pathname === '') {
+    const user = getAuthenticatedUser(req);
+    if (!user) {
+      res.writeHead(302, { 'Location': '/login.html' });
+      return res.end();
+    } else {
+      res.writeHead(302, { 'Location': '/index.html' });
+      return res.end();
+    }
+  }
+
+  // ROTA 2: index.html (Exige autenticação)
+  if (pathname === '/index.html') {
     const user = getAuthenticatedUser(req);
     if (!user) {
       res.writeHead(302, { 'Location': '/login.html' });
@@ -286,7 +298,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // ROTA 2: Página de Login
+  // ROTA 3: Página de Login
   if (pathname === '/login' || pathname === '/login.html') {
     const user = getAuthenticatedUser(req);
     if (user) {
@@ -620,6 +632,13 @@ const server = http.createServer(async (req, res) => {
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
   let filePath = path.join(PUBLIC_DIR, safePath);
 
+  // Se for diretório (como a raiz '/'), resolve para index.html
+  try {
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+      filePath = path.join(filePath, 'index.html');
+    }
+  } catch (e) {}
+
   // Protege diretório
   if (!filePath.startsWith(PUBLIC_DIR)) {
     res.writeHead(403);
@@ -628,6 +647,12 @@ const server = http.createServer(async (req, res) => {
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
+      // Se não encontrou o arquivo, serve a tela de login como fallback seguro
+      const fallback = path.join(PUBLIC_DIR, 'login.html');
+      if (fs.existsSync(fallback)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        return fs.createReadStream(fallback).pipe(res);
+      }
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Arquivo não encontrado');
     }
