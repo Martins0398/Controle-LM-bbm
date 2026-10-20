@@ -2176,9 +2176,14 @@ function renderHistoricoTable() {
         </td>
         <td class="td-isca">${iscaBadge}</td>
         <td class="td-acoes" style="text-align: center;">
-          <button class="btn-reverter-baixa" onclick="reverterBaixaIsca('${r.id}')" title="Restaurar para a Grade Operacional Ativa">
-            <i data-lucide="rotate-ccw"></i> Reverter
-          </button>
+          <div style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+            <button class="btn-reverter-baixa" onclick="reverterBaixaIsca('${r.id}')" title="Restaurar para a Grade Operacional Ativa">
+              <i data-lucide="rotate-ccw"></i> Reverter
+            </button>
+            <button class="btn-table-action btn-del" onclick="removerRegistro('${r.id}')" title="Excluir Definitivamente este Registro">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `;
