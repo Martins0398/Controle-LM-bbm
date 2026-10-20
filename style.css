@@ -1087,10 +1087,16 @@ input:focus, select:focus, textarea:focus {
   border-color: #cbd5e1;
 }
 
+.btn-table-action svg,
+.btn-table-action i {
+  pointer-events: none;
+}
+
 .btn-table-action.btn-del:hover {
   background: #fee2e2;
   color: #dc2626;
   border-color: #fca5a5;
+  transform: scale(1.05);
 }
 
 .empty-state {

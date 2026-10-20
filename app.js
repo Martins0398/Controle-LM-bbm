@@ -248,6 +248,7 @@ let state = {
   searchTerm: "",
   editingId: null,
   confirmingIscaId: null,
+  deletingId: null,
   currentUser: null
 };
 
@@ -913,17 +914,112 @@ window.finalizarOperacao = function(id) {
   renderApp();
 };
 
-// Delete Record
+// Modal & Ações de Exclusão de Registro
+window.fecharModalDelete = function() {
+  const modal = document.getElementById('modal-confirm-delete');
+  if (modal) modal.style.display = 'none';
+  state.deletingId = null;
+};
+
 window.removerRegistro = function(id) {
   const rec = state.registros.find(r => r.id === id);
   if (!rec) return;
 
-  if (confirm(`Deseja realmente remover o registro da Rota ${rec.rota} (Motorista: ${rec.motorista})?`)) {
-    state.registros = state.registros.filter(r => r.id !== id);
-    saveData();
-    renderApp();
+  state.deletingId = id;
+  const modal = document.getElementById('modal-confirm-delete');
+
+  if (modal) {
+    const rotaEl = document.getElementById('delete-record-rota');
+    const placaEl = document.getElementById('delete-record-placa');
+    const motoristaEl = document.getElementById('delete-record-motorista');
+
+    if (rotaEl) rotaEl.textContent = rec.rota || '-';
+    if (placaEl) placaEl.textContent = rec.placa || '-';
+    if (motoristaEl) motoristaEl.textContent = rec.motorista || '-';
+
+    modal.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  } else {
+    // Fallback nativo caso o modal não esteja disponível
+    const conf = window.confirm(`Deseja realmente apagar o registro da Rota ${rec.rota} (Placa: ${rec.placa || ''} - Motorista: ${rec.motorista})?`);
+    if (conf) {
+      window.executarExclusaoRegistro(id);
+    }
   }
 };
+
+window.executarExclusaoRegistro = async function(id) {
+  window.fecharModalDelete();
+
+  // 1. Remove da memória local imediatamente para resposta instantânea
+  state.registros = state.registros.filter(r => r.id !== id);
+  localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(state.registros));
+  renderApp();
+
+  // 2. Feedback visual elegante
+  mostrarToastFeedback('Registro de carregamento excluído com sucesso!', 'success');
+
+  // 3. Sincroniza exclusão no banco de dados SQLite central via HTTP DELETE
+  if (window.location.protocol.startsWith('http')) {
+    try {
+      const res = await fetch(`/api/records/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+      });
+      if (!res.ok) {
+        console.warn('Aviso ao sincronizar exclusão com servidor central:', res.status);
+      }
+    } catch (err) {
+      console.error('Erro de conexão ao remover registro no servidor:', err);
+    }
+  }
+};
+
+function mostrarToastFeedback(mensagem, tipo = 'success') {
+  let toast = document.getElementById('bbm-toast-feedback');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'bbm-toast-feedback';
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: #f8fafc;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      z-index: 999999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-left: 4px solid #10b981;
+    `;
+    document.body.appendChild(toast);
+  }
+
+  const corBorda = (tipo === 'danger' || tipo === 'error') ? '#ef4444' : '#10b981';
+  const icone = (tipo === 'danger' || tipo === 'error') ? '⚠️' : '✅';
+  toast.style.borderLeftColor = corBorda;
+  toast.innerHTML = `<span>${icone}</span> <span>${escapeHtml(mensagem)}</span>`;
+
+  // Anima entrada
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+  }, 3500);
+}
 
 // Open Modal for New Record
 window.abrirModalRegistro = function() {
@@ -1779,6 +1875,16 @@ function setupEventListeners() {
   const btnConfirmIsca = document.getElementById('btn-confirm-isca-submit');
   if (btnConfirmIsca) {
     btnConfirmIsca.addEventListener('click', confirmarBaixaIsca);
+  }
+
+  // Confirmação de Exclusão de Registro
+  const btnConfirmDelete = document.getElementById('btn-confirm-delete-submit');
+  if (btnConfirmDelete) {
+    btnConfirmDelete.addEventListener('click', () => {
+      if (state.deletingId) {
+        window.executarExclusaoRegistro(state.deletingId);
+      }
+    });
   }
 
   // Histórico de Baixas: Busca e Exportação

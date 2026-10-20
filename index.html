@@ -41,7 +41,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Native Excel (.xlsx) Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body class="theme-light">
   <!-- Top Corporate Ribbon / Header -->
@@ -916,7 +916,53 @@
     </div>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <!-- Modal: Confirmação de Exclusão de Registro -->
+  <div class="modal-backdrop" id="modal-confirm-delete" style="display: none;">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header" style="border-bottom: 2px solid #ef4444;">
+        <div class="modal-title-wrap">
+          <i data-lucide="alert-triangle" class="modal-icon" style="color: #ef4444;"></i>
+          <div>
+            <h2 style="color: #ef4444;">Excluir Carregamento</h2>
+            <span class="modal-subtitle">Esta ação não poderá ser desfeita</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btn-close-modal-delete" onclick="fecharModalDelete()">&times;</button>
+      </div>
+
+      <div class="modal-body-padding">
+        <div class="isca-confirm-card" style="border-left: 4px solid #ef4444;">
+          <div class="isca-details-grid">
+            <div class="isca-detail-item">
+              <span class="detail-label">Rota:</span>
+              <strong id="delete-record-rota">--</strong>
+            </div>
+            <div class="isca-detail-item">
+              <span class="detail-label">Placa:</span>
+              <strong id="delete-record-placa">--</strong>
+            </div>
+            <div class="isca-detail-item" style="grid-column: span 2;">
+              <span class="detail-label">Motorista:</span>
+              <strong id="delete-record-motorista">--</strong>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin-top: 1rem; font-size: 0.88rem; color: var(--text-muted);">
+          Tem certeza de que deseja apagar permanentemente este registro da grade e do banco de dados?
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="fecharModalDelete()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btn-confirm-delete-submit" style="background: #dc2626; border-color: #dc2626;">
+          <i data-lucide="trash-2"></i> Sim, Excluir Registro
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=11"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) {
