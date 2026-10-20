@@ -1144,7 +1144,7 @@ function renderDashboardCharts() {
   const elDashGiroVal = document.getElementById('dash-giro-val');
   const elDashGiroPct = document.getElementById('dash-giro-pct');
 
-  if (elDashTempo) elDashTempo.textContent = `${mediaMinDoca} min`;
+  if (elDashTempo) elDashTempo.textContent = formatDuration(mediaMinDoca);
   if (elDashSla) {
     if (mediaMinDoca <= 35) {
       elDashSla.textContent = `Meta: ≤ 35 min (Dentro da Meta)`;
@@ -1155,7 +1155,7 @@ function renderDashboardCharts() {
     }
   }
 
-  if (elDashMaior) elDashMaior.textContent = maiorDur ? `${maiorDur.minutos} min` : `0 min`;
+  if (elDashMaior) elDashMaior.textContent = maiorDur ? formatDuration(maiorDur.minutos) : '0 min';
   if (elDashPlacaGargalo) elDashPlacaGargalo.textContent = maiorDur ? `Placa ${maiorDur.placa}` : `-`;
   if (elDashGargaloSub) elDashGargaloSub.textContent = maiorDur ? `Doca ${maiorDur.doca} • ${maiorDur.motorista.split(' ')[0]}` : `Nenhum veículo`;
   if (elDashEfic) elDashEfic.textContent = `${taxaEficiencia}%`;
@@ -1202,7 +1202,7 @@ function renderDashboardCharts() {
     } else {
       narrativeEl.innerHTML = `
         A operação de <strong>${escapeHtml(unitLabel)}</strong> registra <strong>${pctConcluidos}% das cargas concluídas</strong> (${concluidos} de ${total} viagens expedidas).
-        O tempo médio em doca é de <strong>${mediaMinDoca} minutos</strong> (SLA de pontualidade: <strong>${taxaEficiencia}%</strong>). 
+        O tempo médio em doca é de <strong>${formatDuration(mediaMinDoca)}</strong> (SLA de pontualidade: <strong>${taxaEficiencia}%</strong>). 
         ${iscasPendentes > 0 
           ? `O ponto de atenção executiva é o risco em <span class="highlight-alert">${iscasPendentes} isca(s) aguardando devolução</span> (${taxaIsca}% recolhidas), com maior fluxo na <strong>Doca ${escapeHtml(topDoca)}</strong>.`
           : `Excelente desempenho de segurança: <strong>100% das iscas foram recolhidas</strong> e não há pendências de rastreadores em aberto.`
@@ -1306,8 +1306,14 @@ function renderDashboardCharts() {
             ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            const unit = dataset.unitSuffix || (chart.canvas && chart.canvas.id === 'chart-top-demora' ? ' min' : ' atend.');
-            ctx.fillText(`${val}${unit}`, bar.x + 8, bar.y);
+            let textToDisplay = '';
+            if (chart.canvas && chart.canvas.id === 'chart-top-demora') {
+              textToDisplay = formatDuration(val);
+            } else {
+              const unit = dataset.unitSuffix || ' atend.';
+              textToDisplay = `${val}${unit}`;
+            }
+            ctx.fillText(textToDisplay, bar.x + 8, bar.y);
           } else {
             // Em cima da barra vertical
             ctx.fillStyle = (bar.options.backgroundColor === '#f97316') ? '#ea580c' : (isDark ? '#e2e8f0' : '#1e293b');
@@ -1511,7 +1517,7 @@ function renderDashboardCharts() {
           responsive: true,
           maintainAspectRatio: false,
           layout: {
-            padding: { right: 65 }
+            padding: { right: 85 }
           },
           plugins: {
             legend: { display: false },
@@ -1524,7 +1530,13 @@ function renderDashboardCharts() {
           scales: {
             x: { 
               grace: '20%',
-              ticks: { color: textColor, stepSize: 10 }, 
+              ticks: { 
+                color: textColor,
+                maxTicksLimit: 8,
+                callback: function(val) {
+                  return formatDuration(val);
+                }
+              }, 
               grid: { display: false }, 
               border: { display: false }, 
               beginAtZero: true 
