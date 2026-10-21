@@ -155,6 +155,29 @@ function seedInitialData() {
     'Brasília'
   );
 
+  // 3. Login Administrador BBM: BBM-001 / Admin@BBM2026 (Administrador Master)
+  const bbmPass = hashPassword('Admin@BBM2026');
+  db.prepare(`
+    INSERT INTO users (id, name, email, matricula, password_hash, salt, role, unidade)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(matricula) DO UPDATE SET
+      name = excluded.name,
+      email = excluded.email,
+      password_hash = excluded.password_hash,
+      salt = excluded.salt,
+      role = excluded.role,
+      unidade = excluded.unidade
+  `).run(
+    'usr-admin-1',
+    'Administrador BBM',
+    'admin@bbmlogistica.com.br',
+    'BBM-001',
+    bbmPass.hash,
+    bbmPass.salt,
+    'admin',
+    'todas'
+  );
+
   // Seed de Registros de Docas (Se vazio)
   const recCount = db.prepare('SELECT count(*) as count FROM dock_records').get().count;
   if (recCount === 0) {

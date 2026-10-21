@@ -283,8 +283,8 @@ async function initAuth() {
         const data = await res.json();
         if (data.authenticated && data.user) {
           state.currentUser = data.user;
-          // Se o usuário tem unidade restrita, define sua unidade ativa
-          if (data.user.unidade && data.user.unidade !== 'todas') {
+          // Se o usuário tem unidade restrita (operador), define sua unidade ativa
+          if (data.user.role !== 'admin' && data.user.unidade && data.user.unidade !== 'todas') {
             state.activeUnidade = data.user.unidade;
           }
           updateUserHeaderUI(data.user);
@@ -304,7 +304,7 @@ async function initAuth() {
   if (cachedUser) {
     try {
       state.currentUser = JSON.parse(cachedUser);
-      if (state.currentUser.unidade && state.currentUser.unidade !== 'todas') {
+      if (state.currentUser.role !== 'admin' && state.currentUser.unidade && state.currentUser.unidade !== 'todas') {
         state.activeUnidade = state.currentUser.unidade;
       }
       updateUserHeaderUI(state.currentUser);
@@ -333,22 +333,26 @@ function updateUserHeaderUI(user) {
 
   if (nameEl) nameEl.textContent = user.name || 'Usuário BBM';
   if (roleEl) {
-    if (user.unidade && user.unidade !== 'todas') {
-      roleEl.textContent = `Operador • ${user.unidade}`;
+    if (user.role === 'admin') {
+      roleEl.textContent = (user.unidade && user.unidade !== 'todas') 
+        ? `Administrador • ${user.unidade}` 
+        : 'Administrador Master';
       roleEl.style.color = '#94a3b8';
     } else {
-      roleEl.textContent = user.role === 'admin' ? 'Administrador Master' : 'Operador';
+      roleEl.textContent = (user.unidade && user.unidade !== 'todas') 
+        ? `Operador • ${user.unidade}` 
+        : 'Operador';
       roleEl.style.color = '#94a3b8';
     }
   }
 
-  // Apenas Administrador Geral/Master pode ver botão de gestão de usuários e gerenciar unidades
-  const isMasterAdmin = (user.role === 'admin' && (user.unidade === 'todas' || !user.unidade));
+  // Qualquer Administrador pode gerenciar usuários e adicionar filiais
+  const isAdmin = (user.role === 'admin');
   if (btnAdmin) {
-    btnAdmin.style.display = isMasterAdmin ? 'flex' : 'none';
+    btnAdmin.style.display = isAdmin ? 'flex' : 'none';
   }
   if (btnAddUnit) {
-    btnAddUnit.style.display = isMasterAdmin ? 'flex' : 'none';
+    btnAddUnit.style.display = isAdmin ? 'flex' : 'none';
   }
 }
 
@@ -525,7 +529,7 @@ function populateUnitSelects() {
   const btnAddUnit = document.getElementById('btn-gerenciar-unidades');
 
   const user = state.currentUser;
-  const isRestricted = (user && user.unidade && user.unidade !== 'todas');
+  const isRestricted = (user && user.role !== 'admin' && user.unidade && user.unidade !== 'todas');
 
   if (isRestricted) {
     // Usuário restrito a uma filial (ex: Brasília ou CD São Paulo)
