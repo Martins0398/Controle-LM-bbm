@@ -41,7 +41,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Native Excel (.xlsx) Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body class="theme-light">
   <!-- Top Corporate Ribbon / Header -->
@@ -161,7 +161,7 @@
         <div class="kpi-card total-card">
           <div class="kpi-icon"><i data-lucide="truck"></i></div>
           <div class="kpi-data">
-            <span class="kpi-title">TOTAL DE VEÍCULOS / ROTAS</span>
+            <span class="kpi-title">TOTAL DE VEÍCULOS</span>
             <div class="kpi-value-row">
               <span class="kpi-value" id="kpi-total">0</span>
               <span class="kpi-tag" id="kpi-active-unit-name">CD São Paulo</span>
@@ -172,7 +172,7 @@
         <div class="kpi-card loading-card">
           <div class="kpi-icon"><i data-lucide="clock"></i></div>
           <div class="kpi-data">
-            <span class="kpi-title">EM CARREGAMENTO / NA DOCA</span>
+            <span class="kpi-title">EM CARREGAMENTO</span>
             <div class="kpi-value-row">
               <span class="kpi-value" id="kpi-loading">0</span>
               <span class="kpi-badge badge-warning">Em Operação</span>
@@ -183,7 +183,7 @@
         <div class="kpi-card completed-card">
           <div class="kpi-icon"><i data-lucide="check-circle-2"></i></div>
           <div class="kpi-data">
-            <span class="kpi-title">FINALIZADOS / EXPEDIDOS</span>
+            <span class="kpi-title">FINALIZADOS</span>
             <div class="kpi-value-row">
               <span class="kpi-value" id="kpi-completed">0</span>
               <span class="kpi-badge badge-success">Concluídos</span>
@@ -194,7 +194,7 @@
         <div class="kpi-card iscas-card">
           <div class="kpi-icon"><i data-lucide="radio"></i></div>
           <div class="kpi-data">
-            <span class="kpi-title">ISCAS PENDENTES RETORNO</span>
+            <span class="kpi-title">ISCAS PENDENTES</span>
             <div class="kpi-value-row">
               <span class="kpi-value" id="kpi-iscas-pendentes">0</span>
               <span class="kpi-badge badge-danger" id="kpi-iscas-alert">Atenção</span>
@@ -205,10 +205,10 @@
         <div class="kpi-card avgtime-card">
           <div class="kpi-icon"><i data-lucide="timer"></i></div>
           <div class="kpi-data">
-            <span class="kpi-title">TEMPO MÉDIO DE DOCA</span>
+            <span class="kpi-title">TEMPO MÉDIO DOCA</span>
             <div class="kpi-value-row">
               <span class="kpi-value" id="kpi-tempo-medio">0 min</span>
-              <span class="kpi-subtext">Média Fim - Início</span>
+              <span class="kpi-subtext">Média Geral</span>
             </div>
           </div>
         </div>
@@ -961,7 +961,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) {
