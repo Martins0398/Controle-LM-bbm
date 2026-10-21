@@ -335,10 +335,10 @@ function updateUserHeaderUI(user) {
   if (roleEl) {
     if (user.unidade && user.unidade !== 'todas') {
       roleEl.textContent = `Operador • ${user.unidade}`;
-      roleEl.style.color = '#38bdf8';
+      roleEl.style.color = '#94a3b8';
     } else {
-      roleEl.textContent = user.role === 'admin' ? 'Administrador Master' : 'Operador Geral';
-      roleEl.style.color = user.role === 'admin' ? '#38bdf8' : '#10b981';
+      roleEl.textContent = user.role === 'admin' ? 'Administrador Master' : 'Operador';
+      roleEl.style.color = '#94a3b8';
     }
   }
 

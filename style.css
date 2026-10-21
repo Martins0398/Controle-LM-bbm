@@ -1602,96 +1602,90 @@ body.theme-dark .exec-summary-narrative strong {
 .header-user-card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 3px 9px;
+  gap: 7px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 3px 8px;
   border-radius: var(--radius-md);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.header-user-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--bbm-orange, #f95738);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   flex-shrink: 0;
+}
+
+.user-avatar i, .user-avatar svg {
+  width: 13px;
+  height: 13px;
 }
 
 .user-text-info {
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .user-name {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #ffffff !important; /* Sempre texto branco/claro no cabeçalho escuro */
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #f1f5f9 !important;
   white-space: nowrap;
 }
 
 .user-role-badge {
-  font-size: 0.64rem;
-  font-weight: 700;
-  color: #fdba74 !important; /* Laranja BBM suave e visível */
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.btn-header-admin {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #ffffff !important;
-  padding: 0.3rem 0.75rem;
-  border-radius: var(--radius-md);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 700;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
-  white-space: nowrap;
-}
-
-.btn-header-admin:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.6);
-}
-
-.btn-header-admin i, .btn-header-admin svg {
-  width: 14px;
-  height: 14px;
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: #94a3b8 !important;
+  text-transform: none;
+  letter-spacing: 0.2px;
 }
 
 .btn-user-action {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff !important;
-  width: 26px;
-  height: 26px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #94a3b8 !important;
+  width: 25px;
+  height: 25px;
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   transition: all 0.2s ease;
 }
 
+.btn-user-action i, .btn-user-action svg {
+  width: 13px;
+  height: 13px;
+}
+
 .btn-user-action:hover {
-  background: rgba(2, 132, 199, 0.35);
-  border-color: #38bdf8;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
   color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.btn-user-action.logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5 !important;
 }
 
 .btn-user-action.logout:hover {
