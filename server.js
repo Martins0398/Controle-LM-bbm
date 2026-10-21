@@ -178,48 +178,7 @@ function seedInitialData() {
     'todas'
   );
 
-  // Seed de Registros de Docas (Se vazio)
-  const recCount = db.prepare('SELECT count(*) as count FROM dock_records').get().count;
-  if (recCount === 0) {
-    const defaultRecords = [
-      { id: "rec-1", unidade: "CD São Paulo", rota: "1A", motorista: "PATRICIA DE CARVALHO SOUZA DOS ANJOS", placa: "JDP0A37", doca: "8", conferente: "JOÃO", inicio: "08:16", fim: "08:42", isca: "5583", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 0, obs: "" },
-      { id: "rec-2", unidade: "CD São Paulo", rota: "1A", motorista: "ANTONIO SOUZA NETO", placa: "APG3680", doca: "11", conferente: "LUANA", inicio: "07:00", fim: "07:45", isca: "8774", retornoIsca: "OK", placaLiberada: 0, destaqueLinha: 0, obs: "" },
-      { id: "rec-3", unidade: "CD São Paulo", rota: "1A", motorista: "JOÃO GILBERTO ALVES DA SILVA", placa: "HDH5G43", doca: "8", conferente: "JOÃO", inicio: "07:40", fim: "08:07", isca: "4557", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
-      { id: "rec-4", unidade: "CD São Paulo", rota: "2A", motorista: "MAICK DE SOUSA CAVALCANTE", placa: "QNF6G09", doca: "12", conferente: "NELSON", inicio: "07:22", fim: "07:31", isca: "785", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
-      { id: "rec-5", unidade: "CD São Paulo", rota: "2A/B", motorista: "BRUNO BORGES SADDE", placa: "LLV1330", doca: "12", conferente: "NELSON", inicio: "08:29", fim: "08:47", isca: "S/ISCA", retornoIsca: "S/ISCA", placaLiberada: 0, destaqueLinha: 0, obs: "" },
-      { id: "rec-6", unidade: "CD São Paulo", rota: "2B", motorista: "LUCIO FLAVIO OLIVEIRA PIRES", placa: "JHX5D08", doca: "8", conferente: "JOÃO", inicio: "07:15", fim: "07:24", isca: "1851", retornoIsca: "OK", placaLiberada: 1, destaqueLinha: 0, obs: "" },
-      { id: "rec-7", unidade: "CD São Paulo", rota: "3A", motorista: "WESLEY GOMES PEREIRA", placa: "QIT1A48", doca: "12", conferente: "NELSON", inicio: "10:04", fim: "10:34", isca: "400", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "" },
-      { id: "rec-8", unidade: "CD São Paulo", rota: "3B", motorista: "NILTON OLIVEIRA COSTA", placa: "JIV1456", doca: "10", conferente: "LUANA", inicio: "08:35", fim: "09:25", isca: "9718", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 0, obs: "" },
-      { id: "rec-9", unidade: "CD São Paulo", rota: "3C", motorista: "VAGNER SOUSA OLIVEIRA", placa: "NLJ3A13", doca: "10", conferente: "CARLOS", inicio: "08:53", fim: "09:27", isca: "9167", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 1, obs: "" },
-      { id: "rec-10", unidade: "CD São Paulo", rota: "3D", motorista: "JOSÉ ARAUJO FREIRE", placa: "JHH8E73", doca: "11", conferente: "JULIA", inicio: "07:00", fim: "07:28", isca: "8742", retornoIsca: "OK", placaLiberada: 0, destaqueLinha: 0, obs: "", arquivado: 1, dataHoraBaixa: "16/10/2026 às 07:28" }
-    ];
-
-    const insertStmt = db.prepare(`
-      INSERT INTO dock_records (id, unidade, rota, motorista, placa, doca, conferente, inicio, fim, isca, retornoIsca, placaLiberada, destaqueLinha, obs)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    defaultRecords.forEach(r => {
-      insertStmt.run(r.id, r.unidade, r.rota, r.motorista, r.placa, r.doca, r.conferente, r.inicio, r.fim, r.isca, r.retornoIsca, r.placaLiberada, r.destaqueLinha, r.obs);
-    });
-  }
-
-  // Garante registros de demonstração para a filial Brasília
-  const bsbCount = db.prepare('SELECT count(*) as count FROM dock_records WHERE unidade = ?').get('Brasília').count;
-  if (bsbCount === 0) {
-    const insertStmt = db.prepare(`
-      INSERT INTO dock_records (id, unidade, rota, motorista, placa, doca, conferente, inicio, fim, isca, retornoIsca, placaLiberada, destaqueLinha, obs)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    const bsbRecords = [
-      { id: "bsb-rec-1", unidade: "Brasília", rota: "BSB-01", motorista: "CARLOS HENRIQUE VIEIRA", placa: "JGK4E22", doca: "1", conferente: "MARCOS", inicio: "07:30", fim: "08:15", isca: "9821", retornoIsca: "PENDENTE", placaLiberada: 1, destaqueLinha: 0, obs: "Rota prioritária DF" },
-      { id: "bsb-rec-2", unidade: "Brasília", rota: "BSB-02", motorista: "FERNANDO TAVARES LIMA", placa: "PAE8820", doca: "2", conferente: "LUCAS", inicio: "08:00", fim: "", isca: "3340", retornoIsca: "PENDENTE", placaLiberada: 0, destaqueLinha: 0, obs: "Em carregamento na doca 2" },
-      { id: "bsb-rec-3", unidade: "Brasília", rota: "BSB-03", motorista: "RAFAEL SOUSA MENDES", placa: "RCN3B15", doca: "3", conferente: "MARCOS", inicio: "06:45", fim: "07:20", isca: "5512", retornoIsca: "OK", placaLiberada: 0, destaqueLinha: 0, obs: "Baixa realizada com sucesso" }
-    ];
-    bsbRecords.forEach(r => {
-      insertStmt.run(r.id, r.unidade, r.rota, r.motorista, r.placa, r.doca, r.conferente, r.inicio, r.fim, r.isca, r.retornoIsca, r.placaLiberada, r.destaqueLinha, r.obs);
-    });
-  }
+  // Sistema zerado para uso operacional real (sem registros de testes fictícios)
 }
 
 seedInitialData();

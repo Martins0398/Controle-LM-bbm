@@ -20,221 +20,7 @@ const DEFAULT_UNITS = [
 ];
 
 // Initial Data Seed (Exact records from user's image + additional demo units)
-const SEED_DATA = [
-  // CD São Paulo (Exact image replica)
-  {
-    id: "rec-1",
-    unidade: "CD São Paulo",
-    rota: "1A",
-    motorista: "PATRICIA DE CARVALHO SOUZA DOS ANJOS",
-    placa: "JDP0A37",
-    doca: "8",
-    conferente: "JOÃO",
-    inicio: "08:16",
-    fim: "08:42",
-    isca: "5583",
-    retornoIsca: "PENDENTE",
-    placaLiberada: false,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-2",
-    unidade: "CD São Paulo",
-    rota: "1A",
-    motorista: "ANTONIO SOUZA NETO",
-    placa: "APG3680",
-    doca: "11",
-    conferente: "LUANA",
-    inicio: "07:00",
-    fim: "07:45",
-    isca: "8774",
-    retornoIsca: "OK",
-    placaLiberada: false,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-3",
-    unidade: "CD São Paulo",
-    rota: "1A",
-    motorista: "JOÃO GILBERTO ALVES DA SILVA",
-    placa: "HDH5G43",
-    doca: "8",
-    conferente: "JOÃO",
-    inicio: "07:40",
-    fim: "08:07",
-    isca: "4557",
-    retornoIsca: "PENDENTE",
-    placaLiberada: true,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-4",
-    unidade: "CD São Paulo",
-    rota: "2A",
-    motorista: "MAICK DE SOUSA CAVALCANTE",
-    placa: "QNF6G09",
-    doca: "12",
-    conferente: "NELSON",
-    inicio: "07:22",
-    fim: "07:31",
-    isca: "785",
-    retornoIsca: "PENDENTE",
-    placaLiberada: true,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-5",
-    unidade: "CD São Paulo",
-    rota: "2A/B",
-    motorista: "BRUNO BORGES SADDE",
-    placa: "LLV1330",
-    doca: "12",
-    conferente: "NELSON",
-    inicio: "08:29",
-    fim: "08:47",
-    isca: "S/ISCA",
-    retornoIsca: "S/ISCA",
-    placaLiberada: false,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-6",
-    unidade: "CD São Paulo",
-    rota: "2B",
-    motorista: "LUCIO FLAVIO OLIVEIRA PIRES",
-    placa: "JHX5D08",
-    doca: "8",
-    conferente: "JOÃO",
-    inicio: "07:15",
-    fim: "07:24",
-    isca: "1851",
-    retornoIsca: "OK",
-    placaLiberada: true,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-7",
-    unidade: "CD São Paulo",
-    rota: "3A",
-    motorista: "WESLEY GOMES PEREIRA",
-    placa: "QIT1A48",
-    doca: "12",
-    conferente: "NELSON",
-    inicio: "10:04",
-    fim: "10:34",
-    isca: "400",
-    retornoIsca: "PENDENTE",
-    placaLiberada: true,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-8",
-    unidade: "CD São Paulo",
-    rota: "3B",
-    motorista: "NILTON OLIVEIRA COSTA",
-    placa: "JIV1456",
-    doca: "10",
-    conferente: "LUANA",
-    inicio: "08:35",
-    fim: "09:25",
-    isca: "9718",
-    retornoIsca: "PENDENTE",
-    placaLiberada: false,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-9",
-    unidade: "CD São Paulo",
-    rota: "3C",
-    motorista: "VAGNER SOUSA OLIVEIRA",
-    placa: "NLJ3A13",
-    doca: "10",
-    conferente: "CARLOS",
-    inicio: "08:53",
-    fim: "09:27",
-    isca: "9167",
-    retornoIsca: "PENDENTE",
-    placaLiberada: false,
-    destaqueLinha: true,
-    obs: ""
-  },
-  {
-    id: "rec-10",
-    unidade: "CD São Paulo",
-    rota: "3D",
-    motorista: "JOSÉ ARAUJO FREIRE",
-    placa: "JHH8E73",
-    doca: "11",
-    conferente: "JULIA",
-    inicio: "07:00",
-    fim: "07:28",
-    isca: "8742",
-    retornoIsca: "OK",
-    placaLiberada: false,
-    destaqueLinha: false,
-    obs: ""
-  },
-
-  // CD Curitiba Sample Entries
-  {
-    id: "rec-11",
-    unidade: "CD Curitiba",
-    rota: "CWB-01",
-    motorista: "MARCOS VINICIUS RIBEIRO",
-    placa: "BCW4A21",
-    doca: "3",
-    conferente: "RODRIGO",
-    inicio: "06:45",
-    fim: "07:30",
-    isca: "3312",
-    retornoIsca: "OK",
-    placaLiberada: true,
-    destaqueLinha: false,
-    obs: ""
-  },
-  {
-    id: "rec-12",
-    unidade: "CD Curitiba",
-    rota: "CWB-02",
-    motorista: "EDSON SILVA SANTOS",
-    placa: "RHD8E99",
-    doca: "4",
-    conferente: "RODRIGO",
-    inicio: "08:10",
-    fim: "",
-    isca: "7721",
-    retornoIsca: "PENDENTE",
-    placaLiberada: false,
-    destaqueLinha: false,
-    obs: "Em carregamento de paletes pesados"
-  },
-
-  // CD Rio de Janeiro Sample Entries
-  {
-    id: "rec-13",
-    unidade: "CD Rio de Janeiro",
-    rota: "RIO-NORTH",
-    motorista: "CARLOS EDUARDO MARTINS",
-    placa: "RIO2D19",
-    doca: "6",
-    conferente: "MARCELO",
-    inicio: "07:10",
-    fim: "08:05",
-    isca: "9912",
-    retornoIsca: "OK",
-    placaLiberada: true,
-    destaqueLinha: false,
-    obs: ""
-  }
-];
+const SEED_DATA = [];
 
 // App State
 let state = {
@@ -373,7 +159,7 @@ async function loadStorage() {
       const resRecords = await fetch('/api/records');
       if (resRecords.ok) {
         const records = await resRecords.json();
-        if (records && records.length > 0) {
+        if (Array.isArray(records)) {
           state.registros = records;
           // Normaliza: qualquer registro com retornoIsca OK é arquivado para o Histórico
           state.registros.forEach(r => {
@@ -399,7 +185,7 @@ async function loadStorage() {
     state.unidades = rawUnits ? JSON.parse(rawUnits) : [...DEFAULT_UNITS];
 
     const rawData = localStorage.getItem(STORAGE_KEY_DATA);
-    state.registros = rawData ? JSON.parse(rawData) : [...SEED_DATA];
+    state.registros = rawData ? JSON.parse(rawData) : [];
 
     // Normaliza: qualquer registro com retornoIsca OK é arquivado para o Histórico
     state.registros.forEach(r => {
@@ -420,7 +206,7 @@ async function loadStorage() {
   } catch (err) {
     console.warn("Erro ao ler localStorage, utilizando valores padrão:", err);
     state.unidades = [...DEFAULT_UNITS];
-    state.registros = [...SEED_DATA];
+    state.registros = [];
     state.activeUnidade = "CD São Paulo";
   }
   saveData();
@@ -1847,8 +1633,8 @@ function setupEventListeners() {
   }
 
   document.getElementById('btn-export-excel').addEventListener('click', exportarExcel);
-  document.getElementById('btn-print-table').addEventListener('click', () => window.print());
-  document.getElementById('btn-reset-demo').addEventListener('click', resetDemoData);
+  const btnReset = document.getElementById('btn-reset-demo');
+  if (btnReset) btnReset.addEventListener('click', resetDemoData);
   document.getElementById('btn-toggle-theme').addEventListener('click', toggleTheme);
   document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
 
