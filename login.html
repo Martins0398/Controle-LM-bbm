@@ -39,7 +39,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <!-- Login Stylesheet -->
-  <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="login.css?v=2">
 </head>
 <body>
 
@@ -128,7 +128,7 @@
               <input 
                 type="text" 
                 id="input-identifier" 
-                placeholder="Ex: Dialogo ou Brasilia" 
+                placeholder="Digite sua matrícula, usuário ou e-mail" 
                 required 
                 autofocus
               >
@@ -146,7 +146,7 @@
               <input 
                 type="password" 
                 id="input-password" 
-                placeholder="Digite sua senha (ex: 123456)" 
+                placeholder="Digite sua senha de acesso" 
                 required
               >
               <button type="button" id="btn-toggle-password" class="btn-pwd-toggle" title="Mostrar/Ocultar Senha">
@@ -171,31 +171,6 @@
             <div class="btn-spinner" id="btn-spinner" style="display: none;"></div>
           </button>
         </form>
-
-        <!-- Seletor Rápido de Demonstração / Perfis de Teste -->
-        <div class="demo-profiles-container">
-          <div class="demo-divider">
-            <span>Acesso Rápido para Teste</span>
-          </div>
-          
-          <div class="demo-buttons-grid">
-            <button type="button" class="btn-demo-profile" data-role="dialogo">
-              <div class="demo-profile-icon"><i data-lucide="shield-check"></i></div>
-              <div class="demo-profile-info">
-                <strong>Master (Diálogo)</strong>
-                <span>Login: Dialogo • Todas Unidades</span>
-              </div>
-            </button>
-
-            <button type="button" class="btn-demo-profile" data-role="brasilia">
-              <div class="demo-profile-icon"><i data-lucide="map-pin"></i></div>
-              <div class="demo-profile-info">
-                <strong>Unidade Brasília</strong>
-                <span>Login: Brasilia • Acesso Exclusivo</span>
-              </div>
-            </button>
-          </div>
-        </div>
 
         <!-- Rodapé do Formulário -->
         <div class="login-legal-footer">
@@ -243,7 +218,7 @@
   </div>
 
   <!-- Script do Login -->
-  <script src="login.js"></script>
+  <script src="login.js?v=2"></script>
   <script>
     if (window.lucide) {
       lucide.createIcons();
