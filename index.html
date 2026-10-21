@@ -41,7 +41,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Native Excel (.xlsx) Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body class="theme-light">
   <!-- Top Corporate Ribbon / Header -->
@@ -72,12 +72,13 @@
           </label>
           <div class="custom-select-container">
             <select id="select-unidade" class="unit-select" title="Selecione a Unidade Operacional">
-              <option value="todas">🌐 Visão Geral (Todas as Unidades)</option>
-              <option value="CD São Paulo" selected>📍 CD São Paulo (Matriz)</option>
-              <option value="CD Curitiba">📍 CD Curitiba (PR)</option>
-              <option value="CD Rio de Janeiro">📍 CD Rio de Janeiro (RJ)</option>
-              <option value="CD Belo Horizonte">📍 CD Belo Horizonte (MG)</option>
-              <option value="CD Porto Alegre">📍 CD Porto Alegre (RS)</option>
+              <option value="todas">Todas as Unidades</option>
+              <option value="CD São Paulo" selected>CD São Paulo</option>
+              <option value="CD Curitiba">CD Curitiba</option>
+              <option value="CD Rio de Janeiro">CD Rio de Janeiro</option>
+              <option value="CD Belo Horizonte">CD Belo Horizonte</option>
+              <option value="CD Porto Alegre">CD Porto Alegre</option>
+              <option value="Brasília">Brasília</option>
             </select>
             <button id="btn-gerenciar-unidades" class="btn-icon-addon" onclick="abrirModalUnidades()" title="Gerenciar / Adicionar Unidades">
               <i data-lucide="plus"></i>
@@ -961,7 +962,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) {

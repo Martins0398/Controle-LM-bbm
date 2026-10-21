@@ -528,13 +528,13 @@ function populateUnitSelects() {
   const isRestricted = (user && user.unidade && user.unidade !== 'todas');
 
   if (isRestricted) {
-    // Usuário restrito a uma filial (ex: Brasília)
+    // Usuário restrito a uma filial (ex: Brasília ou CD São Paulo)
     state.activeUnidade = user.unidade;
-    mainSelect.innerHTML = `<option value="${user.unidade}">📍 ${user.unidade} (Acesso Restrito)</option>`;
+    mainSelect.innerHTML = `<option value="${user.unidade}">${user.unidade}</option>`;
     mainSelect.value = user.unidade;
     mainSelect.disabled = true;
-    mainSelect.style.cursor = 'not-allowed';
-    mainSelect.title = `Acesso restrito à unidade ${user.unidade}`;
+    mainSelect.style.cursor = 'default';
+    mainSelect.title = `Unidade ${user.unidade}`;
     if (btnAddUnit) btnAddUnit.style.display = 'none';
 
     // Form Selector travado na unidade do usuário
@@ -550,11 +550,11 @@ function populateUnitSelects() {
       btnAddUnit.style.display = 'flex';
     }
 
-    mainSelect.innerHTML = `<option value="todas">🌐 Visão Geral (Todas as Unidades)</option>`;
+    mainSelect.innerHTML = `<option value="todas">Todas as Unidades</option>`;
     state.unidades.forEach(unit => {
       const opt = document.createElement('option');
       opt.value = unit;
-      opt.textContent = `📍 ${unit}`;
+      opt.textContent = unit;
       if (unit === state.activeUnidade) opt.selected = true;
       mainSelect.appendChild(opt);
     });
@@ -579,9 +579,9 @@ function updateUnitIndicatorText() {
   const ind = document.getElementById('top-indicator-unit');
   const dashTitle = document.getElementById('dash-active-unit-title');
   const user = state.currentUser;
-  let text = state.activeUnidade === 'todas' ? 'Visão Geral (Todas as Unidades)' : state.activeUnidade;
+  let text = state.activeUnidade === 'todas' ? 'Todas as Unidades' : state.activeUnidade;
   if (user && user.unidade && user.unidade !== 'todas') {
-    text = `Unidade ${user.unidade} (Acesso Exclusivo)`;
+    text = user.unidade;
   }
   if (ind) ind.textContent = text;
   if (dashTitle) dashTitle.textContent = text;
