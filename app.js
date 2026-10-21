@@ -1717,17 +1717,20 @@ async function realizarLogout() {
   window.location.href = '/logout';
 }
 
-function abrirModalUsuarios() {
-  document.getElementById('modal-usuarios').style.display = 'flex';
-  carregarListaUsuarios();
-}
+window.abrirModalUsuarios = function() {
+  const modal = document.getElementById('modal-usuarios');
+  if (modal) {
+    modal.style.display = 'flex';
+    window.carregarListaUsuarios();
+  }
+};
 
-function fecharModalUsuarios() {
+window.fecharModalUsuarios = function() {
   const modal = document.getElementById('modal-usuarios');
   if (modal) modal.style.display = 'none';
-}
+};
 
-async function carregarListaUsuarios() {
+window.carregarListaUsuarios = async function() {
   const tbody = document.getElementById('lista-usuarios-cadastrados');
   const selectUnidadeUser = document.getElementById('select-user-unidade');
   if (!tbody) return;
@@ -1736,7 +1739,7 @@ async function carregarListaUsuarios() {
   if (selectUnidadeUser) {
     const currentVal = selectUnidadeUser.value || 'todas';
     selectUnidadeUser.innerHTML = `
-      <option value="todas">🌐 Todas as Unidades (Acesso Total)</option>
+      <option value="todas">Todas as Unidades (Acesso Total)</option>
       ${state.unidades.map(u => `<option value="${u}">📍 ${u}</option>`).join('')}
     `;
     selectUnidadeUser.value = currentVal;
@@ -1745,8 +1748,11 @@ async function carregarListaUsuarios() {
   tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 12px; color: var(--text-secondary);">Carregando usuários...</td></tr>`;
 
   try {
-    const res = await fetch('/api/admin/users');
-    if (!res.ok) throw new Error('Falha ao carregar');
+    const res = await fetch('/api/admin/users', { credentials: 'same-origin' });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || 'Falha ao carregar usuários');
+    }
     const users = await res.json();
 
     if (!users || users.length === 0) {
@@ -1758,20 +1764,20 @@ async function carregarListaUsuarios() {
 
     tbody.innerHTML = users.map(u => {
       const isSelf = (currentUserId && u.id === currentUserId);
-      const unitText = (u.unidade === 'todas') ? '🌐 Todas as Unidades' : `📍 ${u.unidade}`;
+      const unitText = (u.unidade === 'todas') ? 'Todas as Unidades' : `📍 ${u.unidade}`;
       const roleText = (u.role === 'admin') ? 'Administrador Master' : 'Operador';
       const roleBadge = (u.role === 'admin') ? 'status-ok' : '';
 
       const actionBtn = isSelf 
         ? `<span style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;">(Você)</span>`
-        : `<button type="button" class="btn-table-action delete" onclick="excluirUsuario('${u.id}', '${u.matricula}')" title="Excluir Login ${u.matricula}" style="color:#ef4444; border:none; background:transparent; cursor:pointer; font-size:0.9rem;">
+        : `<button type="button" class="btn-table-action delete" onclick="excluirUsuario('${u.id}', '${escapeHtml(u.matricula)}')" title="Excluir Login ${escapeHtml(u.matricula)}" style="color:#ef4444; border:none; background:transparent; cursor:pointer; font-size:0.9rem; padding: 4px;">
              <i data-lucide="trash-2"></i>
            </button>`;
 
       return `
         <tr>
-          <td><strong>${u.name}</strong></td>
-          <td><code>${u.matricula}</code></td>
+          <td><strong>${escapeHtml(u.name)}</strong></td>
+          <td><code>${escapeHtml(u.matricula)}</code></td>
           <td><span class="pill-badge ${roleBadge}" style="font-size:0.75rem; padding: 2px 6px;">${roleText}</span></td>
           <td>${unitText}</td>
           <td style="text-align: center;">${actionBtn}</td>
@@ -1780,12 +1786,12 @@ async function carregarListaUsuarios() {
     }).join('');
     if (window.lucide) lucide.createIcons();
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 12px;">Erro ao carregar usuários ou permissão negada.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 12px;">Erro ao carregar usuários (${escapeHtml(err.message)}).</td></tr>`;
   }
-}
+};
 
-async function cadastrarNovoUsuario(e) {
-  e.preventDefault();
+window.cadastrarNovoUsuario = async function(e) {
+  if (e && e.preventDefault) e.preventDefault();
   const matricula = document.getElementById('input-user-matricula').value.trim();
   const password = document.getElementById('input-user-pass').value;
   const name = document.getElementById('input-user-name').value.trim();
@@ -1796,37 +1802,45 @@ async function cadastrarNovoUsuario(e) {
 
   if (!name || !matricula || !password) {
     alert("Preencha o Login, a Senha e o Nome de identificação.");
-    return;
+    return false;
   }
 
   const btn = document.getElementById('btn-save-new-user');
-  btn.disabled = true;
-  btn.innerHTML = `<i data-lucide="loader" class="animate-spin inline-block mr-1"></i> Criando login...`;
-  if (window.lucide) lucide.createIcons();
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader" class="animate-spin inline-block mr-1"></i> Criando login...`;
+    if (window.lucide) lucide.createIcons();
+  }
 
   try {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ name, email, matricula, password, role, unidade })
     });
 
     const data = await res.json();
     if (res.ok && data.success) {
       alert(`Login "${matricula}" criado com sucesso!\nUnidade: ${unidade === 'todas' ? 'Todas as Unidades' : unidade}`);
-      document.getElementById('form-novo-usuario').reset();
-      carregarListaUsuarios();
+      const formEl = document.getElementById('form-novo-usuario');
+      if (formEl) formEl.reset();
+      window.carregarListaUsuarios();
     } else {
       alert(data.error || "Erro ao cadastrar usuário.");
     }
   } catch (err) {
-    alert("Erro na conexão com o servidor.");
+    console.error("Erro na conexão com o servidor:", err);
+    alert("Erro na conexão com o servidor: " + err.message);
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<i data-lucide="user-plus"></i> Criar Novo Login`;
-    if (window.lucide) lucide.createIcons();
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="user-plus"></i> Criar Novo Login`;
+      if (window.lucide) lucide.createIcons();
+    }
   }
-}
+  return false;
+};
 
 window.excluirUsuario = async function(id, matricula) {
   if (!confirm(`Deseja realmente excluir o login "${matricula}" do sistema?`)) {
@@ -1834,15 +1848,18 @@ window.excluirUsuario = async function(id, matricula) {
   }
 
   try {
-    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/users/${encodeURIComponent(id)}`, { 
+      method: 'DELETE',
+      credentials: 'same-origin'
+    });
     const data = await res.json();
     if (res.ok && data.success) {
-      carregarListaUsuarios();
+      window.carregarListaUsuarios();
     } else {
       alert(data.error || "Não foi possível excluir o usuário.");
     }
   } catch (err) {
-    alert("Erro de conexão ao excluir usuário.");
+    alert("Erro de conexão ao excluir usuário: " + err.message);
   }
 };
 

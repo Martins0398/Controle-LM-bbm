@@ -41,7 +41,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <!-- SheetJS for Native Excel (.xlsx) Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body class="theme-light">
   <!-- Top Corporate Ribbon / Header -->
@@ -105,7 +105,7 @@
             <span class="user-name" id="user-display-name">Carregando...</span>
             <span class="user-role-badge" id="user-display-role">Operador</span>
           </div>
-          <button id="btn-admin-users" class="btn-user-action admin-btn" title="Gerenciar Usuários e Acessos" style="display: none;">
+          <button id="btn-admin-users" class="btn-user-action admin-btn" title="Gerenciar Usuários e Acessos" onclick="abrirModalUsuarios()" style="display: none;">
             <i data-lucide="users"></i>
           </button>
           <button id="btn-logout" class="btn-user-action logout" title="Encerrar Sessão">
@@ -780,12 +780,12 @@
             <span class="modal-subtitle">Cadastre novos operadores ou administradores</span>
           </div>
         </div>
-        <button class="btn-close-modal" id="btn-close-modal-usuarios">&times;</button>
+        <button class="btn-close-modal" id="btn-close-modal-usuarios" onclick="fecharModalUsuarios()">&times;</button>
       </div>
 
       <div class="modal-body-padding">
         <!-- Formulário de Novo Usuário -->
-        <form id="form-novo-usuario" class="user-add-grid">
+        <form id="form-novo-usuario" class="user-add-grid" onsubmit="return cadastrarNovoUsuario(event)">
           <div class="form-field">
             <label>Login de Acesso / Matrícula</label>
             <input type="text" id="input-user-matricula" placeholder="Ex: Curitiba ou GestorDF" required>
@@ -812,7 +812,7 @@
           <div class="form-field">
             <label>Unidade Autorizada</label>
             <select id="select-user-unidade" required>
-              <option value="todas">🌐 Todas as Unidades (Acesso Total)</option>
+              <option value="todas">Todas as Unidades (Acesso Total)</option>
               <option value="CD São Paulo">CD São Paulo</option>
               <option value="CD Curitiba">CD Curitiba</option>
               <option value="CD Rio de Janeiro">CD Rio de Janeiro</option>
@@ -848,7 +848,7 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-secondary" id="btn-fechar-usuarios">Fechar</button>
+        <button type="button" class="btn-secondary" id="btn-fechar-usuarios" onclick="fecharModalUsuarios()">Fechar</button>
       </div>
     </div>
   </div>
@@ -959,7 +959,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=17"></script>
+  <script src="app.js?v=18"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.lucide) {

@@ -1716,6 +1716,7 @@ body.theme-dark .exec-summary-narrative strong {
 .btn-user-action i, .btn-user-action svg {
   width: 13px;
   height: 13px;
+  pointer-events: none;
 }
 
 .btn-user-action:hover {
